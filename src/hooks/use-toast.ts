@@ -55,15 +55,4 @@ export const toast: ToastActionType = {
   update: (id, props) => TOAST_FUNCTION?.update(id, props),
 };
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const { toasts, open, close, update } = useToast();
-
-  useEffect(() => {
-    TOAST_FUNCTION = { open, close, update };
-    return () => {
-      TOAST_FUNCTION = undefined as unknown as ToastActionType;
-    };
-  }, [open, close, update]);
-
-  return <>{children}</>;
-}
+// Create a new file for the ToastProvider component since it requires JSX
