@@ -15,7 +15,7 @@ export type WasteType =
   | 'Unknown';
 
 // Mock identification function
-export const identifyWasteType = async (imageFile: File): Promise<string> => {
+export const identifyWasteType = async (imageFile: File): Promise<WasteType> => {
   // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 2000));
   
@@ -41,13 +41,13 @@ export const identifyWasteType = async (imageFile: File): Promise<string> => {
 };
 
 // Function to determine if a waste type is recyclable
-export const isRecyclable = (wasteType: string): boolean => {
+export const isRecyclable = (wasteType: WasteType): boolean => {
   return wasteType.toLowerCase().includes('recyclable');
 };
 
 // Function to get recommendations based on waste type
-export const getWasteRecommendations = (wasteType: string): string[] => {
-  const recommendations: Record<string, string[]> = {
+export const getWasteRecommendations = (wasteType: WasteType): string[] => {
+  const recommendations: Record<WasteType, string[]> = {
     'Recyclable Paper': [
       'Remove any plastic or metal attachments',
       'Keep paper dry and clean',
@@ -95,12 +95,13 @@ export const getWasteRecommendations = (wasteType: string): string[] => {
       'Look for recyclable alternatives',
       'Dispose according to local guidelines',
       'Consider reuse options before disposal'
+    ],
+    'Unknown': [
+      'Check with local waste management for proper disposal',
+      'Consider if the item can be reused or repurposed',
+      'Look for recycling symbols or markings on the item'
     ]
   };
   
-  return recommendations[wasteType] || [
-    'Check with local waste management for proper disposal',
-    'Consider if the item can be reused or repurposed',
-    'Look for recycling symbols or markings on the item'
-  ];
+  return recommendations[wasteType] || recommendations['Unknown'];
 };
