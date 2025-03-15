@@ -1,28 +1,19 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { RewardPointsCard } from "@/components/profile/RewardPointsCard";
 import { UserReportsTabs } from "@/components/profile/UserReportsTabs";
+import { getCurrentUser, User, isAuthenticated } from "@/utils/auth";
+import { toast } from "@/hooks/use-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
-
-  // Sample user data - in a real app, this would come from your auth context or API
-  const userData = {
-    name: "Rohan Sharma",
-    email: "rohan.sharma@example.com",
-    location: "Mumbai, India",
-    pincode: "400001",
-    address: "123 Marine Drive, Mumbai",
-    rewardPoints: 125,
-    totalReports: 7
-  };
-
+  const [user, setUser] = useState<User | null>(null);
+  
   // Sample reports data - in a real app, this would come from an API
   const reportsData = [
     {
@@ -52,6 +43,45 @@ const Profile = () => {
     // ... more reports
   ];
 
+  // Load user data on component mount
+  useEffect(() => {
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to view your profile.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+    
+    // Get current user data
+    const userData = getCurrentUser();
+    if (userData) {
+      setUser(userData);
+    } else {
+      toast({
+        title: "Error loading profile",
+        description: "Unable to load user data. Please try logging in again.",
+        variant: "destructive",
+      });
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // If user data is still loading, show a loading state
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[70vh]">
+        <div className="text-center">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Helmet>
@@ -66,8 +96,8 @@ const Profile = () => {
       </header>
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <UserProfileCard user={userData} />
-        <RewardPointsCard points={userData.rewardPoints} reports={userData.totalReports} />
+        <UserProfileCard user={user} setUser={setUser} />
+        <RewardPointsCard points={user.rewardPoints} reports={reportsData.length} />
       </div>
 
       <Card className="p-6">

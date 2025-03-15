@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // User type definition
 export interface User {
@@ -13,14 +13,14 @@ export interface User {
   password?: string; // Add password field to support the Register form
 }
 
-// Create a mock user for development
-const MOCK_USER: User = {
-  id: 'user-123',
-  name: 'Test User',
-  email: 'test@example.com',
-  address: '123 Green Street, Mumbai',
-  pincode: '400001',
-  rewardPoints: 750
+// Create a mock database for development
+const USERS_DB_KEY = 'smartCircular_users_db';
+
+// Initialize the mock database if it doesn't exist
+const initMockDatabase = () => {
+  if (!localStorage.getItem(USERS_DB_KEY)) {
+    localStorage.setItem(USERS_DB_KEY, JSON.stringify([]));
+  }
 };
 
 // Initialize Supabase client if credentials are available
@@ -34,34 +34,56 @@ try {
     console.log('Supabase client initialized successfully');
   } else {
     console.warn('Missing Supabase credentials. Using mock auth service.');
+    initMockDatabase();
   }
 } catch (error) {
   console.error('Failed to initialize Supabase client:', error);
+  initMockDatabase();
 }
 
 // Local storage keys
 const AUTH_TOKEN_KEY = 'smartCircular_auth_token';
 const USER_DATA_KEY = 'smartCircular_user_data';
 
-// Mock auth functions for development when Supabase isn't configured
+// User registration
 export const register = async (userData: Partial<User>): Promise<boolean> => {
   try {
     if (supabase) {
       // Implement real Supabase registration here when credentials are available
       console.log('Would register with Supabase:', userData);
+    } else {
+      // Mock database implementation
+      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      
+      // Check if email already exists
+      if (users.some((user: User) => user.email === userData.email)) {
+        toast({
+          title: 'Registration failed',
+          description: 'This email is already registered.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // Create new user
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: userData.name || 'Anonymous User',
+        email: userData.email || '',
+        address: userData.address || '',
+        pincode: userData.pincode || '',
+        rewardPoints: 0,
+        password: userData.password
+      };
+      
+      // Add to mock database
+      users.push(newUser);
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
+      
+      // Log in the user
+      localStorage.setItem(AUTH_TOKEN_KEY, `mock-token-${newUser.id}`);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(newUser));
     }
-    
-    // For development: Create a mock user and store in localStorage
-    const mockUserData = {
-      ...MOCK_USER,
-      name: userData.name || MOCK_USER.name,
-      email: userData.email || MOCK_USER.email,
-      address: userData.address || MOCK_USER.address,
-      pincode: userData.pincode || MOCK_USER.pincode
-    };
-    
-    localStorage.setItem(AUTH_TOKEN_KEY, 'mock-token-12345');
-    localStorage.setItem(USER_DATA_KEY, JSON.stringify(mockUserData));
     
     toast({
       title: 'Account created!',
@@ -80,16 +102,34 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
   }
 };
 
+// User login
 export const login = async (credentials: { email: string, password: string }): Promise<boolean> => {
   try {
     if (supabase) {
       // Implement real Supabase login here when credentials are available
       console.log('Would login with Supabase:', credentials.email);
+    } else {
+      // Mock database implementation
+      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      
+      // Find user by email and password
+      const user = users.find((u: User) => 
+        u.email === credentials.email && u.password === credentials.password
+      );
+      
+      if (!user) {
+        toast({
+          variant: 'destructive',
+          title: 'Login failed',
+          description: 'Invalid email or password. Please try again.',
+        });
+        return false;
+      }
+      
+      // Store user data and token
+      localStorage.setItem(AUTH_TOKEN_KEY, `mock-token-${user.id}`);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
     }
-    
-    // For development: Store mock user in localStorage
-    localStorage.setItem(AUTH_TOKEN_KEY, 'mock-token-12345');
-    localStorage.setItem(USER_DATA_KEY, JSON.stringify(MOCK_USER));
     
     toast({
       title: 'Welcome back!',
@@ -142,6 +182,21 @@ export const updateUser = (userData: Partial<User>): boolean => {
     const currentUser = getCurrentUser();
     if (!currentUser) return false;
     
+    if (supabase) {
+      // Implement real Supabase update here when credentials are available
+      console.log('Would update with Supabase:', userData);
+    } else {
+      // Update in mock database
+      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      const userIndex = users.findIndex((u: User) => u.id === currentUser.id);
+      
+      if (userIndex >= 0) {
+        users[userIndex] = { ...users[userIndex], ...userData };
+        localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
+      }
+    }
+    
+    // Update current user data
     const updatedUser = { ...currentUser, ...userData };
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
     
@@ -163,6 +218,21 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
     const currentUser = getCurrentUser();
     if (!currentUser) return null;
     
+    if (supabase) {
+      // Implement real Supabase update here when credentials are available
+      console.log('Would update reward points with Supabase:', points);
+    } else {
+      // Update in mock database
+      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      const userIndex = users.findIndex((u: User) => u.id === currentUser.id);
+      
+      if (userIndex >= 0) {
+        users[userIndex].rewardPoints += points;
+        localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
+      }
+    }
+    
+    // Update current user data
     const updatedUser = { 
       ...currentUser, 
       rewardPoints: currentUser.rewardPoints + points 

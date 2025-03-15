@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Loader2 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthFormProps {
   type: 'login' | 'register';
@@ -15,7 +15,6 @@ interface AuthFormProps {
 
 const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -25,14 +24,59 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     pincode: '',
     address: ''
   });
+  
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear errors when user types
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = { ...errors };
+    
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+      valid = false;
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      valid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+      valid = false;
+    }
+    
+    if (type === 'register' && !formData.name) {
+      newErrors.name = 'Name is required';
+      valid = false;
+    }
+    
+    setErrors(newErrors);
+    return valid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -83,8 +127,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
                 onChange={handleChange}
                 required
                 autoComplete="name"
-                className="rounded-lg"
+                className={`rounded-lg ${errors.name ? 'border-destructive' : ''}`}
               />
+              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
             </div>
           )}
           
@@ -99,8 +144,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
               onChange={handleChange}
               required
               autoComplete="email"
-              className="rounded-lg"
+              className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
             />
+            {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
           </div>
           
           <div className="space-y-2">
@@ -114,8 +160,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
               onChange={handleChange}
               required
               autoComplete={type === 'login' ? 'current-password' : 'new-password'}
-              className="rounded-lg"
+              className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
             />
+            {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
           </div>
           
           {type === 'register' && (

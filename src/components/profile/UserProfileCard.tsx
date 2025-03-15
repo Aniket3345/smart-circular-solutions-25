@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Edit, Save, Trash2, MapPin, Tag } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface UserProfileCardProps {
   user: User | null;
@@ -15,7 +15,6 @@ interface UserProfileCardProps {
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({ user, setUser }) => {
-  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -31,7 +30,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ user, setUser }) => {
 
   const handleSaveProfile = async () => {
     try {
-      const success = await updateUser({
+      const success = updateUser({
         name: formData.name,
         pincode: formData.pincode,
         address: formData.address,
