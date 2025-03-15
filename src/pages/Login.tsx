@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { login, isAdmin } from '@/utils/auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [loginType, setLoginType] = useState<'citizen' | 'admin'>('citizen');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleLogin = async (data: any) => {
     const success = await login({
@@ -19,11 +21,22 @@ const Login = () => {
     });
     
     if (success) {
-      if (loginType === 'admin' && !isAdmin()) {
-        // If trying to login as admin but user is not an admin
-        navigate('/');
-      } else if (loginType === 'admin' && isAdmin()) {
-        navigate('/admin');
+      // After successful login, check if admin and redirect accordingly
+      if (loginType === 'admin') {
+        if (isAdmin()) {
+          toast({
+            title: "Admin login successful",
+            description: "Redirecting to admin dashboard",
+          });
+          navigate('/admin');
+        } else {
+          toast({
+            title: "Access denied",
+            description: "You don't have admin privileges",
+            variant: "destructive",
+          });
+          navigate('/');
+        }
       } else {
         navigate('/');
       }
@@ -48,6 +61,16 @@ const Login = () => {
               <TabsTrigger value="citizen">Citizen Login</TabsTrigger>
               <TabsTrigger value="admin">Admin Login</TabsTrigger>
             </TabsList>
+            <TabsContent value="citizen">
+              <div className="text-center mb-4">
+                <p className="text-sm text-muted-foreground">Login to your citizen account</p>
+              </div>
+            </TabsContent>
+            <TabsContent value="admin">
+              <div className="text-center mb-4">
+                <p className="text-sm text-muted-foreground">Admin credentials: username "admin", password "admin"</p>
+              </div>
+            </TabsContent>
           </Tabs>
           
           <AuthForm 
