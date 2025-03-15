@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -63,9 +62,9 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     try {
-      const updatedUser = updateUser({
+      const updatedUser = await updateUser({
         name: formData.name,
         pincode: formData.pincode,
         address: formData.address,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -82,7 +81,7 @@ const Electricity = () => {
     setComment(e.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!image || !issueType || !location) {
       toast({
         title: 'Missing information',
@@ -112,8 +111,12 @@ const Electricity = () => {
     
     // Award points to user
     if (user) {
-      const updatedUser = addRewardPoints(newItem.points);
-      setUser(updatedUser);
+      try {
+        const updatedUser = await addRewardPoints(newItem.points);
+        setUser(updatedUser);
+      } catch (error) {
+        console.error('Failed to add reward points:', error);
+      }
     }
     
     // Show success toast

@@ -81,7 +81,7 @@ const Waste = () => {
     setComment(e.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!image || !wasteType || !location) {
       toast({
         title: 'Missing information',
@@ -108,8 +108,12 @@ const Waste = () => {
     localStorage.setItem('reported_waste_items', JSON.stringify(updatedItems));
     
     if (user) {
-      const updatedUser = addRewardPoints(newItem.points);
-      setUser(updatedUser);
+      try {
+        const updatedUser = await addRewardPoints(newItem.points);
+        setUser(updatedUser);
+      } catch (error) {
+        console.error('Failed to add reward points:', error);
+      }
     }
     
     toast({
