@@ -16,7 +16,7 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { isAuthenticated, getCurrentUser, logout, addRewardPoints } from '@/utils/auth';
 import { isRecyclable, getWasteRecommendations, WasteType } from '@/utils/imageRecognition';
 
@@ -36,7 +36,7 @@ interface ReportedItem {
 
 const Waste = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toasts, open, close, update } = useToast();
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(getCurrentUser());
   const [image, setImage] = useState<string | null>(null);
@@ -83,7 +83,7 @@ const Waste = () => {
 
   const handleSubmit = async () => {
     if (!image || !wasteType || !location) {
-      toast.open({
+      open({
         title: 'Missing information',
         description: 'Please provide all required information before submitting.',
         variant: 'destructive',
@@ -116,7 +116,7 @@ const Waste = () => {
       }
     }
     
-    toast.open({
+    open({
       title: 'Report submitted successfully!',
       description: `You earned ${newItem.points} points for your contribution.`,
       variant: 'default',
