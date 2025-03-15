@@ -63,17 +63,20 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     try {
-      const updatedUser = await updateUser({
+      const success = await updateUser({
         name: formData.name,
         pincode: formData.pincode,
         address: formData.address,
       });
-      setUser(updatedUser);
-      setIsEditing(false);
-      toast({
-        title: 'Profile updated successfully',
-        description: 'Your profile information has been updated.',
-      });
+      
+      if (success) {
+        setUser(getCurrentUser());
+        setIsEditing(false);
+        toast({
+          title: 'Profile updated successfully',
+          description: 'Your profile information has been updated.',
+        });
+      }
     } catch (error) {
       toast({
         title: 'Error updating profile',
