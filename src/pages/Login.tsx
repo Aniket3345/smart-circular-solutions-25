@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 const Login = () => {
   const [loginType, setLoginType] = useState<'citizen' | 'admin'>('citizen');
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { open: showToast } = useToast();
 
   const handleLogin = async (data: any) => {
     const success = await login({
@@ -24,13 +24,13 @@ const Login = () => {
       // After successful login, check if admin and redirect accordingly
       if (loginType === 'admin') {
         if (isAdmin()) {
-          toast({
+          showToast({
             title: "Admin login successful",
             description: "Redirecting to admin dashboard",
           });
           navigate('/admin');
         } else {
-          toast({
+          showToast({
             title: "Access denied",
             description: "You don't have admin privileges",
             variant: "destructive",
