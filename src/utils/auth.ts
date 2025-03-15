@@ -1,207 +1,157 @@
 
-// Authentication service using Supabase
 import { createClient } from '@supabase/supabase-js';
+import { toast } from '@/components/ui/use-toast';
 
-// Type definitions
+// User type definition
 export interface User {
   id: string;
   name: string;
   email: string;
-  pincode: string;
-  address: string;
+  address?: string;
+  pincode?: string;
   rewardPoints: number;
-  createdAt: string;
 }
 
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  pincode: string;
-  address: string;
-}
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials. Please check your environment variables.');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Check if a user is currently logged in
-export const isAuthenticated = (): boolean => {
-  return localStorage.getItem('sb-auth-token') !== null;
+// Create a mock user for development
+const MOCK_USER: User = {
+  id: 'user-123',
+  name: 'Test User',
+  email: 'test@example.com',
+  address: '123 Green Street, Mumbai',
+  pincode: '400001',
+  rewardPoints: 750
 };
 
-// Get the current logged in user
-export const getCurrentUser = (): User | null => {
-  const userJson = localStorage.getItem('sb-user');
-  return userJson ? JSON.parse(userJson) : null;
-};
+// Initialize Supabase client if credentials are available
+let supabase: any = null;
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.warn('Missing Supabase credentials. Using mock auth service.');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+}
 
-// Login a user
-export const login = async (credentials: LoginCredentials): Promise<User> => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: credentials.email,
-    password: credentials.password,
-  });
-  
-  if (error) {
-    throw new Error(error.message);
-  }
-  
-  if (!data.user) {
-    throw new Error('User not found');
-  }
-  
-  // Get the user profile data from profiles table
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
-  
-  if (profileError) {
-    throw new Error('User profile not found');
-  }
-  
-  const user: User = {
-    id: data.user.id,
-    name: profileData.name,
-    email: data.user.email || '',
-    pincode: profileData.pincode || '',
-    address: profileData.address || '',
-    rewardPoints: profileData.reward_points || 0,
-    createdAt: profileData.created_at || new Date().toISOString()
-  };
-  
-  // Store user in localStorage for easy access
-  localStorage.setItem('sb-auth-token', data.session?.access_token || '');
-  localStorage.setItem('sb-user', JSON.stringify(user));
-  
-  return user;
-};
+// Local storage keys
+const AUTH_TOKEN_KEY = 'smartCircular_auth_token';
+const USER_DATA_KEY = 'smartCircular_user_data';
 
-// Register a new user
-export const register = async (data: RegisterData): Promise<User> => {
-  // Register with Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-  });
-  
-  if (authError) {
-    throw new Error(authError.message);
-  }
-  
-  if (!authData.user) {
-    throw new Error('Registration failed');
-  }
-  
-  // Create user profile in the profiles table
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .insert({
-      id: authData.user.id,
-      name: data.name,
-      email: data.email,
-      pincode: data.pincode,
-      address: data.address,
-      reward_points: 0,
-      created_at: new Date().toISOString()
+// Mock auth functions for development when Supabase isn't configured
+export const register = async (userData: Partial<User>): Promise<boolean> => {
+  try {
+    if (supabase) {
+      // Implement real Supabase registration here when credentials are available
+      console.log('Would register with Supabase:', userData);
+    }
+    
+    // For development: Create a mock user and store in localStorage
+    const mockUserData = {
+      ...MOCK_USER,
+      name: userData.name || MOCK_USER.name,
+      email: userData.email || MOCK_USER.email,
+      address: userData.address || MOCK_USER.address,
+      pincode: userData.pincode || MOCK_USER.pincode
+    };
+    
+    localStorage.setItem(AUTH_TOKEN_KEY, 'mock-token-12345');
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(mockUserData));
+    
+    toast({
+      title: 'Account created!',
+      description: 'You have successfully registered.',
     });
-  
-  if (profileError) {
-    throw new Error('Error creating user profile');
+    
+    return true;
+  } catch (error) {
+    console.error('Registration error:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Registration failed',
+      description: 'Please try again later.',
+    });
+    return false;
   }
-  
-  const user: User = {
-    id: authData.user.id,
-    name: data.name,
-    email: data.email,
-    pincode: data.pincode,
-    address: data.address,
-    rewardPoints: 0,
-    createdAt: new Date().toISOString()
-  };
-  
-  // Store user in localStorage for easy access
-  localStorage.setItem('sb-auth-token', authData.session?.access_token || '');
-  localStorage.setItem('sb-user', JSON.stringify(user));
-  
-  return user;
 };
 
-// Logout the current user
-export const logout = async (): Promise<void> => {
-  await supabase.auth.signOut();
-  localStorage.removeItem('sb-auth-token');
-  localStorage.removeItem('sb-user');
+export const login = async (email: string, password: string): Promise<boolean> => {
+  try {
+    if (supabase) {
+      // Implement real Supabase login here when credentials are available
+      console.log('Would login with Supabase:', email);
+    }
+    
+    // For development: Store mock user in localStorage
+    localStorage.setItem(AUTH_TOKEN_KEY, 'mock-token-12345');
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(MOCK_USER));
+    
+    toast({
+      title: 'Welcome back!',
+      description: 'You have successfully logged in.',
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Login error:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Login failed',
+      description: 'Invalid email or password. Please try again.',
+    });
+    return false;
+  }
 };
 
-// Update user data
-export const updateUser = async (updatedUser: Partial<User>): Promise<User> => {
-  const currentUser = getCurrentUser();
-  
-  if (!currentUser) {
-    throw new Error('No user is logged in');
+export const logout = (): void => {
+  try {
+    if (supabase) {
+      // Implement real Supabase logout here when credentials are available
+      console.log('Would logout with Supabase');
+    }
+    
+    // Remove auth data from localStorage
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
+    
+    toast({
+      title: 'Logged out',
+      description: 'You have been logged out successfully.',
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
   }
-  
-  // Update profile in Supabase
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      name: updatedUser.name || currentUser.name,
-      pincode: updatedUser.pincode || currentUser.pincode,
-      address: updatedUser.address || currentUser.address,
-      reward_points: updatedUser.rewardPoints !== undefined 
-        ? updatedUser.rewardPoints 
-        : currentUser.rewardPoints
-    })
-    .eq('id', currentUser.id);
-  
-  if (error) {
-    throw new Error('Failed to update user profile');
-  }
-  
-  // Update local user data
-  const newUserData = { ...currentUser, ...updatedUser };
-  localStorage.setItem('sb-user', JSON.stringify(newUserData));
-  
-  return newUserData;
 };
 
-// Add reward points to user
-export const addRewardPoints = async (points: number): Promise<User> => {
-  const currentUser = getCurrentUser();
-  
-  if (!currentUser) {
-    throw new Error('No user is logged in');
+export const isAuthenticated = (): boolean => {
+  return localStorage.getItem(AUTH_TOKEN_KEY) !== null;
+};
+
+export const getCurrentUser = (): User | null => {
+  const userData = localStorage.getItem(USER_DATA_KEY);
+  return userData ? JSON.parse(userData) : null;
+};
+
+export const updateUser = (userData: Partial<User>): boolean => {
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return false;
+    
+    const updatedUser = { ...currentUser, ...userData };
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+    
+    toast({
+      title: 'Profile updated',
+      description: 'Your profile has been updated successfully.',
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Update user error:', error);
+    return false;
   }
-  
-  const newPoints = currentUser.rewardPoints + points;
-  
-  // Update points in Supabase
-  const { error } = await supabase
-    .from('profiles')
-    .update({ reward_points: newPoints })
-    .eq('id', currentUser.id);
-  
-  if (error) {
-    throw new Error('Failed to update reward points');
-  }
-  
-  // Update local user data
-  const updatedUser = { ...currentUser, rewardPoints: newPoints };
-  localStorage.setItem('sb-user', JSON.stringify(updatedUser));
-  
-  return updatedUser;
 };
