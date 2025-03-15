@@ -11,16 +11,17 @@ import { toast } from "@/hooks/use-toast";
 interface AuthFormProps {
   type: 'login' | 'register';
   onSubmit: (data: any) => Promise<void>;
+  loginType?: 'citizen' | 'admin';
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citizen' }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
+    email: loginType === 'admin' ? 'admin' : '',
+    password: loginType === 'admin' ? 'admin' : '',
     pincode: '',
     address: ''
   });
@@ -48,7 +49,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     if (!formData.email) {
       newErrors.email = 'Email is required';
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (loginType !== 'admin' && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
       valid = false;
     }
@@ -56,7 +57,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     if (!formData.password) {
       newErrors.password = 'Password is required';
       valid = false;
-    } else if (formData.password.length < 6) {
+    } else if (loginType !== 'admin' && formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
       valid = false;
     }
@@ -89,7 +90,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
           : 'Your account has been created. Welcome to Smart Circular!',
       });
       
-      navigate('/');
     } catch (error) {
       console.error('Auth error:', error);
       toast.open({
@@ -106,11 +106,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     <Card className="w-full max-w-md mx-auto animate-fade-up glass-card">
       <CardHeader>
         <CardTitle>
-          {type === 'login' ? 'Welcome back' : 'Create your account'}
+          {type === 'login' 
+            ? loginType === 'admin' 
+              ? 'Admin Login' 
+              : 'Welcome back' 
+            : 'Create your account'}
         </CardTitle>
         <CardDescription>
           {type === 'login' 
-            ? 'Enter your credentials to access your account' 
+            ? loginType === 'admin'
+              ? 'Enter admin credentials to access the dashboard'
+              : 'Enter your credentials to access your account' 
             : 'Fill in the details below to create your account'}
         </CardDescription>
       </CardHeader>
@@ -134,16 +140,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">
+              {loginType === 'admin' ? 'Username' : 'Email'}
+            </Label>
             <Input
               id="email"
               name="email"
-              type="email"
-              placeholder="your@email.com"
+              type={loginType === 'admin' ? 'text' : 'email'}
+              placeholder={loginType === 'admin' ? 'admin' : 'your@email.com'}
               value={formData.email}
               onChange={handleChange}
               required
-              autoComplete="email"
+              autoComplete={loginType === 'admin' ? 'username' : 'email'}
               className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
             />
             {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
@@ -211,23 +219,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center border-t pt-4">
-        {type === 'login' ? (
-          <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/register')}>
-              Create one
-            </Button>
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/login')}>
-              Login
-            </Button>
-          </p>
-        )}
-      </CardFooter>
+      {loginType !== 'admin' && (
+        <CardFooter className="flex justify-center border-t pt-4">
+          {type === 'login' ? (
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/register')}>
+                Create one
+              </Button>
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/login')}>
+                Login
+              </Button>
+            </p>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };

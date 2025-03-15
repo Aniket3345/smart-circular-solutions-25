@@ -1,18 +1,33 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
-import { login } from '@/utils/auth';
+import { login, isAdmin } from '@/utils/auth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Login = () => {
+  const [loginType, setLoginType] = useState<'citizen' | 'admin'>('citizen');
+  const navigate = useNavigate();
+
   const handleLogin = async (data: any) => {
-    await login({
+    const success = await login({
       email: data.email,
       password: data.password
     });
+    
+    if (success) {
+      if (loginType === 'admin' && !isAdmin()) {
+        // If trying to login as admin but user is not an admin
+        navigate('/');
+      } else if (loginType === 'admin' && isAdmin()) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
   };
 
   return (
@@ -28,7 +43,18 @@ const Login = () => {
             </Button>
           </Link>
           
-          <AuthForm type="login" onSubmit={handleLogin} />
+          <Tabs defaultValue="citizen" className="mb-6" onValueChange={(value) => setLoginType(value as 'citizen' | 'admin')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="citizen">Citizen Login</TabsTrigger>
+              <TabsTrigger value="admin">Admin Login</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <AuthForm 
+            type="login" 
+            onSubmit={handleLogin} 
+            loginType={loginType} 
+          />
         </div>
       </div>
     </div>

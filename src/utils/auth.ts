@@ -10,15 +10,43 @@ export interface User {
   pincode?: string;
   rewardPoints: number;
   password?: string; // Add password field to support the Register form
+  role?: 'user' | 'admin'; // Add role field for admin differentiation
+}
+
+// Report type definition
+export interface Report {
+  id: string;
+  userId: string;
+  type: 'waste' | 'flood' | 'electricity';
+  imageUrl?: string;
+  description?: string;
+  location?: string;
+  timestamp: number;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 // Create a mock database for development
 const USERS_DB_KEY = 'smartCircular_users_db';
+const REPORTS_DB_KEY = 'smartCircular_reports_db';
 
 // Initialize the mock database if it doesn't exist
 const initMockDatabase = () => {
   if (!localStorage.getItem(USERS_DB_KEY)) {
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify([]));
+    // Add a default admin account
+    const adminUser: User = {
+      id: 'admin-1',
+      name: 'Administrator',
+      email: 'admin',
+      rewardPoints: 0,
+      password: 'admin',
+      role: 'admin'
+    };
+    
+    localStorage.setItem(USERS_DB_KEY, JSON.stringify([adminUser]));
+  }
+  
+  if (!localStorage.getItem(REPORTS_DB_KEY)) {
+    localStorage.setItem(REPORTS_DB_KEY, JSON.stringify([]));
   }
 };
 
@@ -72,7 +100,8 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
         address: userData.address || '',
         pincode: userData.pincode || '',
         rewardPoints: 0,
-        password: userData.password
+        password: userData.password,
+        role: 'user' // Default role for new users
       };
       
       // Add to mock database
@@ -176,6 +205,11 @@ export const getCurrentUser = (): User | null => {
   return userData ? JSON.parse(userData) : null;
 };
 
+export const isAdmin = (): boolean => {
+  const currentUser = getCurrentUser();
+  return currentUser?.role === 'admin';
+};
+
 export const updateUser = (userData: Partial<User>): boolean => {
   try {
     const currentUser = getCurrentUser();
@@ -212,10 +246,12 @@ export const updateUser = (userData: Partial<User>): boolean => {
 };
 
 // Add the addRewardPoints function
-export const addRewardPoints = async (points: number): Promise<User | null> => {
+export const addRewardPoints = async (points: number, userId?: string): Promise<User | null> => {
   try {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return null;
+    // If userId is provided, update that specific user (admin function)
+    // Otherwise, update the current user
+    const userToUpdate = userId ? getUserById(userId) : getCurrentUser();
+    if (!userToUpdate) return null;
     
     if (supabase) {
       // Implement real Supabase update here when credentials are available
@@ -223,7 +259,7 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
     } else {
       // Update in mock database
       const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      const userIndex = users.findIndex((u: User) => u.id === currentUser.id);
+      const userIndex = users.findIndex((u: User) => u.id === userToUpdate.id);
       
       if (userIndex >= 0) {
         users[userIndex].rewardPoints += points;
@@ -231,17 +267,33 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
       }
     }
     
-    // Update current user data
-    const updatedUser = { 
-      ...currentUser, 
-      rewardPoints: currentUser.rewardPoints + points 
-    };
+    // Update current user data if it's the current user being updated
+    if (!userId) {
+      const updatedUser = { 
+        ...userToUpdate, 
+        rewardPoints: userToUpdate.rewardPoints + points 
+      };
+      
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+      return updatedUser;
+    }
     
-    localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
-    
-    return updatedUser;
+    // Return the updated user
+    return getUserById(userId);
   } catch (error) {
     console.error('Add reward points error:', error);
+    return null;
+  }
+};
+
+// Get user by ID
+export const getUserById = (userId: string): User | null => {
+  try {
+    const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+    const user = users.find((u: User) => u.id === userId);
+    return user || null;
+  } catch (error) {
+    console.error('Get user by ID error:', error);
     return null;
   }
 };
@@ -256,5 +308,82 @@ export const getAllUsers = (): User[] => {
     // Return users from mock database
     const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
     return users;
+  }
+};
+
+// Add a report function
+export const addReport = (reportData: Partial<Report>): Report | null => {
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return null;
+    
+    const newReport: Report = {
+      id: `report-${Date.now()}`,
+      userId: currentUser.id,
+      type: reportData.type || 'waste',
+      imageUrl: reportData.imageUrl,
+      description: reportData.description,
+      location: reportData.location,
+      timestamp: Date.now(),
+      status: 'pending'
+    };
+    
+    // Add to mock database
+    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
+    reports.push(newReport);
+    localStorage.setItem(REPORTS_DB_KEY, JSON.stringify(reports));
+    
+    return newReport;
+  } catch (error) {
+    console.error('Add report error:', error);
+    return null;
+  }
+};
+
+// Get all reports
+export const getAllReports = (): Report[] => {
+  try {
+    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
+    return reports;
+  } catch (error) {
+    console.error('Get all reports error:', error);
+    return [];
+  }
+};
+
+// Get reports by user
+export const getReportsByUser = (userId: string): Report[] => {
+  try {
+    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
+    return reports.filter((report: Report) => report.userId === userId);
+  } catch (error) {
+    console.error('Get reports by user error:', error);
+    return [];
+  }
+};
+
+// Update report status
+export const updateReportStatus = (reportId: string, status: 'approved' | 'rejected'): boolean => {
+  try {
+    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
+    const reportIndex = reports.findIndex((r: Report) => r.id === reportId);
+    
+    if (reportIndex >= 0) {
+      reports[reportIndex].status = status;
+      localStorage.setItem(REPORTS_DB_KEY, JSON.stringify(reports));
+      
+      // If approved, award points to user
+      if (status === 'approved') {
+        const report = reports[reportIndex];
+        addRewardPoints(10, report.userId);
+      }
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Update report status error:', error);
+    return false;
   }
 };
