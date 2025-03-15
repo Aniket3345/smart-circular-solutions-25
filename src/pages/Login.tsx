@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -7,12 +6,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { login, isAdmin } from '@/utils/auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [loginType, setLoginType] = useState<'citizen' | 'admin'>('citizen');
   const navigate = useNavigate();
-  const { open: showToast } = useToast();
 
   const handleLogin = async (data: any) => {
     const success = await login({
@@ -24,13 +22,13 @@ const Login = () => {
       // After successful login, check if admin and redirect accordingly
       if (loginType === 'admin') {
         if (isAdmin()) {
-          showToast({
+          toast.open({
             title: "Admin login successful",
             description: "Redirecting to admin dashboard",
           });
           navigate('/admin');
         } else {
-          showToast({
+          toast.open({
             title: "Access denied",
             description: "You don't have admin privileges",
             variant: "destructive",
