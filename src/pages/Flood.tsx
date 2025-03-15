@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { isAuthenticated, getCurrentUser, logout, addRewardPoints } from '@/utils/auth';
 import FloodReport from '@/components/flood/FloodReport';
 import FloodReportsList from '@/components/flood/FloodReportsList';
@@ -24,7 +23,6 @@ interface ReportedItem {
 
 const Flood = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(getCurrentUser());
   const [reportedItems, setReportedItems] = useState<ReportedItem[]>([]);
@@ -88,7 +86,7 @@ const Flood = () => {
     }
     
     // Show success toast
-    toast({
+    toast.open({
       title: 'Flood report submitted successfully!',
       description: `You earned ${newItem.points} points for your contribution.`,
       variant: 'default',

@@ -57,7 +57,7 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
       
       // Check if email already exists
       if (users.some((user: User) => user.email === userData.email)) {
-        toast({
+        toast.open({
           title: 'Registration failed',
           description: 'This email is already registered.',
           variant: 'destructive',
@@ -85,7 +85,7 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
       localStorage.setItem(USER_DATA_KEY, JSON.stringify(newUser));
     }
     
-    toast({
+    toast.open({
       title: 'Account created!',
       description: 'You have successfully registered.',
     });
@@ -93,7 +93,7 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Registration error:', error);
-    toast({
+    toast.open({
       variant: 'destructive',
       title: 'Registration failed',
       description: 'Please try again later.',
@@ -118,7 +118,7 @@ export const login = async (credentials: { email: string, password: string }): P
       );
       
       if (!user) {
-        toast({
+        toast.open({
           variant: 'destructive',
           title: 'Login failed',
           description: 'Invalid email or password. Please try again.',
@@ -131,7 +131,7 @@ export const login = async (credentials: { email: string, password: string }): P
       localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
     }
     
-    toast({
+    toast.open({
       title: 'Welcome back!',
       description: 'You have successfully logged in.',
     });
@@ -139,7 +139,7 @@ export const login = async (credentials: { email: string, password: string }): P
     return true;
   } catch (error) {
     console.error('Login error:', error);
-    toast({
+    toast.open({
       variant: 'destructive',
       title: 'Login failed',
       description: 'Invalid email or password. Please try again.',
@@ -159,7 +159,7 @@ export const logout = (): void => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_DATA_KEY);
     
-    toast({
+    toast.open({
       title: 'Logged out',
       description: 'You have been logged out successfully.',
     });
@@ -200,7 +200,7 @@ export const updateUser = (userData: Partial<User>): boolean => {
     const updatedUser = { ...currentUser, ...userData };
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
     
-    toast({
+    toast.open({
       title: 'Profile updated',
       description: 'Your profile has been updated successfully.',
     });

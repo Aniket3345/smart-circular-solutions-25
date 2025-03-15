@@ -6,10 +6,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import ReportItem from './ReportItem';
 
+interface Report {
+  id: number | string;
+  title: string;
+  location: string;
+  date: string;
+  category: string;
+  image: string;
+}
+
 interface UserReportsTabsProps {
-  wasteReports: any[];
-  floodReports: any[];
-  electricityReports: any[];
+  wasteReports: Report[];
+  floodReports: Report[];
+  electricityReports: Report[];
   formatDate: (dateStr: string) => string;
   deleteReport: (reportType: string, reportId: string) => void;
 }

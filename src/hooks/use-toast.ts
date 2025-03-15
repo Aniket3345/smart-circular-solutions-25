@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 type ToastProps = {
   id: string;
@@ -10,7 +10,7 @@ type ToastProps = {
 };
 
 type ToastActionType = {
-  open: (props: Omit<ToastProps, "id">) => void;
+  open: (props: Omit<ToastProps, "id">) => string;
   close: (id: string) => void;
   update: (id: string, props: Partial<Omit<ToastProps, "id">>) => void;
 };
@@ -47,12 +47,25 @@ export const useToast = () => {
 };
 
 // This is a singleton to allow imperative toast creation
-let TOAST_FUNCTION: ToastActionType;
+let TOAST_FUNCTION: ToastActionType | null = null;
 
-export const toast: ToastActionType = {
-  open: (props) => TOAST_FUNCTION?.open(props),
-  close: (id) => TOAST_FUNCTION?.close(id),
-  update: (id, props) => TOAST_FUNCTION?.update(id, props),
+// Make the toast object use functions that call the methods on the current TOAST_FUNCTION
+export const toast = {
+  open: (props: Omit<ToastProps, "id">): string => {
+    if (!TOAST_FUNCTION) return "";
+    return TOAST_FUNCTION.open(props);
+  },
+  close: (id: string): void => {
+    if (!TOAST_FUNCTION) return;
+    TOAST_FUNCTION.close(id);
+  },
+  update: (id: string, props: Partial<Omit<ToastProps, "id">>): void => {
+    if (!TOAST_FUNCTION) return;
+    TOAST_FUNCTION.update(id, props);
+  }
 };
 
-// Create a new file for the ToastProvider component since it requires JSX
+// Export function to set the global toast function - will be called by ToastProvider
+export const setToastFunction = (functions: ToastActionType | null): void => {
+  TOAST_FUNCTION = functions;
+};

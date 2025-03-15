@@ -4,9 +4,9 @@ import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UserProfileCard } from "@/components/profile/UserProfileCard";
-import { RewardPointsCard } from "@/components/profile/RewardPointsCard";
-import { UserReportsTabs } from "@/components/profile/UserReportsTabs";
+import UserProfileCard from "@/components/profile/UserProfileCard";
+import RewardPointsCard from "@/components/profile/RewardPointsCard";
+import UserReportsTabs from "@/components/profile/UserReportsTabs";
 import { getCurrentUser, User, isAuthenticated } from "@/utils/auth";
 import { toast } from "@/hooks/use-toast";
 
@@ -47,7 +47,7 @@ const Profile = () => {
   useEffect(() => {
     // Check if user is authenticated
     if (!isAuthenticated()) {
-      toast({
+      toast.open({
         title: "Authentication required",
         description: "Please login to view your profile.",
         variant: "destructive",
@@ -61,7 +61,7 @@ const Profile = () => {
     if (userData) {
       setUser(userData);
     } else {
-      toast({
+      toast.open({
         title: "Error loading profile",
         description: "Unable to load user data. Please try logging in again.",
         variant: "destructive",
@@ -97,12 +97,18 @@ const Profile = () => {
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <UserProfileCard user={user} setUser={setUser} />
-        <RewardPointsCard points={user.rewardPoints} reports={reportsData.length} />
+        <RewardPointsCard points={user?.rewardPoints || 0} totalReports={reportsData.length} />
       </div>
 
       <Card className="p-6">
         <h2 className="text-2xl font-semibold mb-4">My Reports</h2>
-        <UserReportsTabs reports={reportsData} />
+        <UserReportsTabs 
+          wasteReports={reportsData.filter(r => r.category === 'waste')}
+          floodReports={reportsData.filter(r => r.category === 'flood')}
+          electricityReports={reportsData.filter(r => r.category === 'electricity')}
+          formatDate={(date) => new Date(date).toLocaleDateString()}
+          deleteReport={() => {}} // Placeholder for delete functionality
+        />
       </Card>
     </div>
   );

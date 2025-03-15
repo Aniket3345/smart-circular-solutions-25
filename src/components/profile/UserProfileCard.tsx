@@ -39,13 +39,13 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ user, setUser }) => {
       if (success) {
         setUser(getCurrentUser());
         setIsEditing(false);
-        toast({
+        toast.open({
           title: 'Profile updated successfully',
           description: 'Your profile information has been updated.',
         });
       }
     } catch (error) {
-      toast({
+      toast.open({
         title: 'Error updating profile',
         description: 'An error occurred while updating your profile.',
         variant: 'destructive',

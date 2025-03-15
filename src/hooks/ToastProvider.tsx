@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { useToast } from "./use-toast";
+import { useToast, setToastFunction } from "./use-toast";
 
 type ToastProviderProps = {
   children: React.ReactNode;
@@ -11,15 +11,12 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
   useEffect(() => {
     // Set the global toast function
-    if (typeof window !== "undefined") {
-      // @ts-ignore - we're purposely setting a global reference
-      window.TOAST_FUNCTION = { open, close, update };
-    }
+    const toastFunctions = { open, close, update };
+    setToastFunction(toastFunctions);
+    
     return () => {
-      if (typeof window !== "undefined") {
-        // @ts-ignore - cleanup
-        window.TOAST_FUNCTION = undefined;
-      }
+      // Cleanup
+      setToastFunction(null);
     };
   }, [open, close, update]);
 

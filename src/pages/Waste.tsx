@@ -16,7 +16,7 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { isAuthenticated, getCurrentUser, logout, addRewardPoints } from '@/utils/auth';
 import { isRecyclable, getWasteRecommendations, WasteType } from '@/utils/imageRecognition';
 
@@ -83,7 +83,7 @@ const Waste = () => {
 
   const handleSubmit = async () => {
     if (!image || !wasteType || !location) {
-      toast({
+      toast.open({
         title: 'Missing information',
         description: 'Please provide all required information before submitting.',
         variant: 'destructive',
@@ -116,7 +116,7 @@ const Waste = () => {
       }
     }
     
-    toast({
+    toast.open({
       title: 'Report submitted successfully!',
       description: `You earned ${newItem.points} points for your contribution.`,
       variant: 'default',

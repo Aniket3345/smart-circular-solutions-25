@@ -82,7 +82,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     try {
       await onSubmit(formData);
       
-      toast({
+      toast.open({
         title: type === 'login' ? 'Welcome back!' : 'Account created successfully',
         description: type === 'login' 
           ? 'You have successfully logged in.' 
@@ -92,7 +92,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       navigate('/');
     } catch (error) {
       console.error('Auth error:', error);
-      toast({
+      toast.open({
         title: 'Authentication error',
         description: 'Something went wrong. Please try again.',
         variant: 'destructive',

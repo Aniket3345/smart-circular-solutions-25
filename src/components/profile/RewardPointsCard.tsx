@@ -3,14 +3,13 @@ import React from 'react';
 import { Award } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User } from '@/utils/auth';
 
 interface RewardPointsCardProps {
-  user: User | null;
+  points: number;
   totalReports: number;
 }
 
-const RewardPointsCard: React.FC<RewardPointsCardProps> = ({ user, totalReports }) => {
+const RewardPointsCard: React.FC<RewardPointsCardProps> = ({ points, totalReports }) => {
   return (
     <Card className="mt-6">
       <CardHeader className="pb-2">
@@ -22,9 +21,9 @@ const RewardPointsCard: React.FC<RewardPointsCardProps> = ({ user, totalReports 
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center space-y-4">
-          <div className="text-4xl font-bold text-primary">{user?.rewardPoints || 0}</div>
+          <div className="text-4xl font-bold text-primary">{points}</div>
           <p className="text-sm text-center text-muted-foreground">
-            You've earned {user?.rewardPoints || 0} points by contributing to your community.
+            You've earned {points} points by contributing to your community.
             Keep reporting issues to earn more rewards.
           </p>
           <div className="w-full pt-4">
