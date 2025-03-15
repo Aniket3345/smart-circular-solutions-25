@@ -64,7 +64,7 @@ export const getWasteRecommendations = (wasteType: WasteType): string[] => {
       'Rinse thoroughly',
       'Separate by color if required locally',
       'Remove lids and corks',
-      'Don't break the glass - it's easier to recycle whole'
+      'Don\'t break the glass - it\'s easier to recycle whole'
     ],
     'Recyclable Metal': [
       'Rinse food cans',
@@ -99,7 +99,8 @@ export const getWasteRecommendations = (wasteType: WasteType): string[] => {
     'Unknown': [
       'Check with local waste management for proper disposal',
       'Consider if the item can be reused or repurposed',
-      'Look for recycling symbols or markings on the item'
+      'Look for recycling symbols or markings on the item',
+      'When in doubt, consult local waste guidelines'
     ]
   };
   
