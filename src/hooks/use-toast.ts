@@ -61,7 +61,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     TOAST_FUNCTION = { open, close, update };
     return () => {
-      TOAST_FUNCTION = undefined as any;
+      TOAST_FUNCTION = undefined as unknown as ToastActionType;
     };
   }, [open, close, update]);
 
