@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -19,7 +18,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { isAuthenticated, getCurrentUser, logout, addRewardPoints } from '@/utils/auth';
-import { isRecyclable, getWasteRecommendations } from '@/utils/imageRecognition';
+import { isRecyclable, getWasteRecommendations, WasteType } from '@/utils/imageRecognition';
 
 interface ReportedItem {
   id: string;
@@ -41,7 +40,7 @@ const Waste = () => {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(getCurrentUser());
   const [image, setImage] = useState<string | null>(null);
-  const [wasteType, setWasteType] = useState<string | null>(null);
+  const [wasteType, setWasteType] = useState<WasteType | null>(null);
   const [location, setLocation] = useState<{ address: string; latitude: number; longitude: number } | null>(null);
   const [comment, setComment] = useState('');
   const [reportedItems, setReportedItems] = useState<ReportedItem[]>([]);
@@ -58,7 +57,6 @@ const Waste = () => {
     
     setUser(getCurrentUser());
     
-    // Load reported items from localStorage
     const items = localStorage.getItem('reported_waste_items');
     if (items) {
       setReportedItems(JSON.parse(items));
@@ -72,7 +70,7 @@ const Waste = () => {
 
   const handleImageProcessed = (imageUrl: string, type: string) => {
     setImage(imageUrl);
-    setWasteType(type);
+    setWasteType(type as WasteType);
   };
 
   const handleLocationSelected = (loc: { address: string; latitude: number; longitude: number }) => {
@@ -95,7 +93,6 @@ const Waste = () => {
     
     setIsSubmitting(true);
     
-    // Create new report item
     const newItem: ReportedItem = {
       id: 'waste_' + Date.now().toString(),
       image,
@@ -106,25 +103,21 @@ const Waste = () => {
       points: 10
     };
     
-    // Update reported items
     const updatedItems = [newItem, ...reportedItems];
     setReportedItems(updatedItems);
     localStorage.setItem('reported_waste_items', JSON.stringify(updatedItems));
     
-    // Award points to user
     if (user) {
       const updatedUser = addRewardPoints(newItem.points);
       setUser(updatedUser);
     }
     
-    // Show success toast
     toast({
       title: 'Report submitted successfully!',
       description: `You earned ${newItem.points} points for your contribution.`,
       variant: 'default',
     });
     
-    // Reset form
     setImage(null);
     setWasteType(null);
     setLocation(null);
@@ -151,7 +144,6 @@ const Waste = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left column - Report form */}
             <div className="lg:col-span-2 space-y-6">
               <Card className="glass-card">
                 <CardHeader>
@@ -236,7 +228,6 @@ const Waste = () => {
                 )}
               </Card>
               
-              {/* Recent activity */}
               {reportedItems.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -282,7 +273,6 @@ const Waste = () => {
               )}
             </div>
             
-            {/* Right column - Information */}
             <div className="space-y-6">
               <InfoCard
                 title="About Waste Management"

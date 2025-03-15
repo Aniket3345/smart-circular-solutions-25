@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, X, Check, Loader2 } from 'lucide-react';
-import { identifyWasteType } from '@/utils/imageRecognition';
+import { identifyWasteType, WasteType } from '@/utils/imageRecognition';
 
 interface ImageUploaderProps {
   onImageProcessed: (imageUrl: string, type: string) => void;
@@ -67,10 +67,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageProcessed, type })
     
     setIsProcessing(true);
     try {
-      let resultText = '';
+      let resultText: string = '';
       
       if (type === 'waste') {
-        resultText = await identifyWasteType(imageFile);
+        const wasteType: WasteType = await identifyWasteType(imageFile);
+        resultText = wasteType;
       } else if (type === 'flood') {
         resultText = 'Flood area identified'; // Placeholder
       } else if (type === 'electricity') {
