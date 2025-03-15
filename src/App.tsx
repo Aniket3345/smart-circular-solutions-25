@@ -12,6 +12,7 @@ import Waste from "./pages/Waste";
 import Flood from "./pages/Flood";
 import Electricity from "./pages/Electricity";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 // Create a new QueryClient instance
@@ -33,6 +34,7 @@ const App = () => {
               <Route path="/flood" element={<Flood />} />
               <Route path="/electricity" element={<Electricity />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

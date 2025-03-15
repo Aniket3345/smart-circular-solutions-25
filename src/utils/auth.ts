@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 
@@ -244,5 +243,18 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
   } catch (error) {
     console.error('Add reward points error:', error);
     return null;
+  }
+};
+
+// Get all users - useful for admin views
+export const getAllUsers = (): User[] => {
+  if (supabase) {
+    // For a real Supabase implementation, you would fetch users from the database
+    console.log('Would fetch all users from Supabase');
+    return [];
+  } else {
+    // Return users from mock database
+    const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+    return users;
   }
 };
