@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import { isAuthenticated, getCurrentUser, logout, updateUser } from '@/utils/auth';
+import { isAuthenticated, getCurrentUser, logout, updateUser, User } from '@/utils/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState(getCurrentUser());
+  const [user, setUser] = useState<User | null>(getCurrentUser());
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -41,7 +41,6 @@ const Profile = () => {
       address: currentUser?.address || '',
     });
 
-    // Load reports from localStorage
     const wasteItems = localStorage.getItem('reported_waste_items');
     if (wasteItems) setWasteReports(JSON.parse(wasteItems));
 
@@ -152,7 +151,6 @@ const Profile = () => {
       <main className="flex-1 pt-20">
         <div className="container max-w-6xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Card */}
             <div className="lg:col-span-1">
               <Card className="glass-card">
                 <CardHeader className="pb-2">
@@ -252,7 +250,6 @@ const Profile = () => {
                 )}
               </Card>
 
-              {/* Reward Points Card */}
               <Card className="mt-6">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
@@ -293,7 +290,6 @@ const Profile = () => {
               </Card>
             </div>
 
-            {/* Tabs for Reports */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>

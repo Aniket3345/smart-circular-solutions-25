@@ -10,6 +10,7 @@ export interface User {
   address?: string;
   pincode?: string;
   rewardPoints: number;
+  password?: string; // Add password field to support the Register form
 }
 
 // Create a mock user for development
@@ -79,11 +80,11 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
   }
 };
 
-export const login = async (email: string, password: string): Promise<boolean> => {
+export const login = async (credentials: { email: string, password: string }): Promise<boolean> => {
   try {
     if (supabase) {
       // Implement real Supabase login here when credentials are available
-      console.log('Would login with Supabase:', email);
+      console.log('Would login with Supabase:', credentials.email);
     }
     
     // For development: Store mock user in localStorage
@@ -153,5 +154,25 @@ export const updateUser = (userData: Partial<User>): boolean => {
   } catch (error) {
     console.error('Update user error:', error);
     return false;
+  }
+};
+
+// Add the addRewardPoints function
+export const addRewardPoints = async (points: number): Promise<User | null> => {
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return null;
+    
+    const updatedUser = { 
+      ...currentUser, 
+      rewardPoints: currentUser.rewardPoints + points 
+    };
+    
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+    
+    return updatedUser;
+  } catch (error) {
+    console.error('Add reward points error:', error);
+    return null;
   }
 };
