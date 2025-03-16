@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -480,16 +479,28 @@ export const updateReportStatus = async (
   status: 'approved' | 'rejected'
 ): Promise<boolean> => {
   try {
+    console.log(`Updating report with ID: ${reportId} to status: ${status}`);
+    
     // Get all reports from localStorage
     const reports = getReports();
     
     // Find index of report
     const reportIndex = reports.findIndex(r => r.id === reportId);
     
-    if (reportIndex === -1) return false;
+    if (reportIndex === -1) {
+      console.error(`Report with ID ${reportId} not found`);
+      return false;
+    }
+    
+    console.log(`Found report at index ${reportIndex}:`, reports[reportIndex]);
     
     // Update report status
-    reports[reportIndex].status = status;
+    reports[reportIndex] = {
+      ...reports[reportIndex],
+      status: status
+    };
+    
+    console.log(`Updated report:`, reports[reportIndex]);
     
     // If report is approved, add points to user
     if (status === 'approved') {
@@ -504,6 +515,7 @@ export const updateReportStatus = async (
       if (userIndex !== -1) {
         // Add 10 points to user
         users[userIndex].rewardPoints += 10;
+        console.log(`Added 10 points to user ${userId}, new total: ${users[userIndex].rewardPoints}`);
         
         // Save updated users to localStorage
         saveUsers(users);
@@ -518,6 +530,7 @@ export const updateReportStatus = async (
     
     // Save updated reports to localStorage
     saveReports(reports);
+    console.log(`Successfully saved updated reports to localStorage`);
     
     return true;
   } catch (error) {
@@ -525,3 +538,4 @@ export const updateReportStatus = async (
     return false;
   }
 };
+

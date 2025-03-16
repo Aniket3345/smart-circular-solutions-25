@@ -47,21 +47,30 @@ const Admin = () => {
         const allReports = await getAllReports();
         console.log("Loaded all reports:", allReports);
         
-        // Format reports for UI
-        const formattedReports = allReports.map(report => ({
-          id: report.id,
-          userId: report.userId,
-          type: report.type,
-          description: report.description,
-          imageUrl: report.imageUrl,
-          status: report.status,
-          timestamp: report.timestamp,
-          location: report.location,
-          date: new Date(report.timestamp).toLocaleDateString()
-        }));
+        // Create a unique set of reports by ID to prevent duplicates
+        const uniqueReportsMap = new Map();
         
-        setReports(formattedReports);
-        setFilteredReports(formattedReports);
+        allReports.forEach(report => {
+          // Only add if this report ID isn't already in our map or replace if it is
+          uniqueReportsMap.set(report.id, {
+            id: report.id,
+            userId: report.userId,
+            type: report.type,
+            description: report.description,
+            imageUrl: report.imageUrl,
+            status: report.status,
+            timestamp: report.timestamp,
+            location: report.location,
+            date: new Date(report.timestamp).toLocaleDateString()
+          });
+        });
+        
+        // Convert map back to array
+        const uniqueReports = Array.from(uniqueReportsMap.values());
+        console.log("Unique reports:", uniqueReports.length);
+        
+        setReports(uniqueReports);
+        setFilteredReports(uniqueReports);
         
         // Load all users
         const allUsers = await getAllUsers();
@@ -97,17 +106,22 @@ const Admin = () => {
   // Handle report approval/rejection
   const handleUpdateStatus = async (reportId: string, status: 'approved' | 'rejected') => {
     try {
+      console.log(`Updating report ${reportId} to status: ${status}`);
+      
       const success = await updateReportStatus(reportId, status);
       
       if (success) {
-        // Update local state
-        setReports(prev => prev.map(report => 
+        // Update local state with the new status
+        const updatedReports = reports.map(report => 
           report.id === reportId ? { ...report, status } : report
-        ));
+        );
         
-        setFilteredReports(prev => prev.map(report => 
-          report.id === reportId ? { ...report, status } : report
-        ));
+        setReports(updatedReports);
+        
+        // Update filtered reports to match
+        setFilteredReports(prev => 
+          prev.map(report => report.id === reportId ? { ...report, status } : report)
+        );
         
         toast.open({
           title: `Report ${status}`,
