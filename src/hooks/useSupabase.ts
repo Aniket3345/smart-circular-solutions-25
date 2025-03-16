@@ -1,62 +1,52 @@
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useState, useEffect, createContext, useContext } from 'react';
 
-// Create a context for Supabase
-type SupabaseContextType = {
-  supabase: SupabaseClient | null;
-  isInitialized: boolean;
+// Create a context for auth state
+type AuthContextType = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
   error: Error | null;
 };
 
-const SupabaseContext = createContext<SupabaseContextType>({
-  supabase: null,
-  isInitialized: false,
+const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  isLoading: false,
   error: null
 });
 
-// Provider component to initialize Supabase once
+// Provider component to initialize auth state
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (supabaseClient) {
-      return;
-    }
-    
+    // Check if user is logged in using localStorage
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (supabaseUrl && supabaseKey) {
-        const client = createClient(supabaseUrl, supabaseKey);
-        setSupabaseClient(client);
-        console.log('Supabase client initialized successfully');
-        setIsInitialized(true);
-      } else {
-        console.warn('Supabase credentials not found in environment variables');
-        setError(new Error('Supabase credentials missing'));
+      const user = localStorage.getItem('user');
+      if (user) {
+        setIsAuthenticated(true);
       }
+      setIsLoading(false);
     } catch (err) {
-      console.error('Error initializing Supabase client:', err);
+      console.error('Error checking authentication:', err);
       setError(err as Error);
+      setIsLoading(false);
     }
-  }, [supabaseClient]);
+  }, []);
   
   return (
-    <SupabaseContext.Provider value={{ 
-      supabase: supabaseClient, 
-      isInitialized, 
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      isLoading, 
       error 
     }}>
       {children}
-    </SupabaseContext.Provider>
+    </AuthContext.Provider>
   );
 }
 
-// Hook to use Supabase within components
+// Hook to use auth state within components
 export const useSupabase = () => {
-  return useContext(SupabaseContext);
+  return useContext(AuthContext);
 };

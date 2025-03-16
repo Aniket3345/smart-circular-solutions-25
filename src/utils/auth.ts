@@ -1,7 +1,4 @@
 
-import { createClient } from '@supabase/supabase-js';
-import { useSupabase } from '@/hooks/useSupabase';
-
 export interface User {
   id: string;
   email: string;
@@ -98,27 +95,9 @@ const mockReports: Report[] = [
   },
 ];
 
-// Helper function to check if Supabase is configured
-const isSupabaseConfigured = () => {
-  try {
-    const { supabase } = useSupabase();
-    return !!supabase;
-  } catch (error) {
-    console.error('Error checking Supabase configuration:', error);
-    return false;
-  }
-};
-
 // Check if user is authenticated
 export const isAuthenticated = (): boolean => {
   try {
-    // First try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      // Fix: We need to check for session in localStorage since getSession() returns a Promise
-      return !!localStorage.getItem('sb-session');
-    }
-    
-    // Fallback to localStorage for development
     return !!localStorage.getItem('user');
   } catch (error) {
     console.error('Error checking authentication status:', error);
@@ -140,18 +119,6 @@ export const isAdmin = (): boolean => {
 // Get current user
 export const getCurrentUser = (): User | null => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      // Fix: We can't await here since we're not in an async function
-      // Instead, check localStorage for the user data that would be set during login
-      const userString = localStorage.getItem('sb-user');
-      if (userString) {
-        return JSON.parse(userString);
-      }
-      return null;
-    }
-    
-    // Fallback to localStorage for development
     const userString = localStorage.getItem('user');
     if (userString) {
       return JSON.parse(userString);
@@ -166,39 +133,6 @@ export const getCurrentUser = (): User | null => {
 // Login user
 export const login = async (credentials: { email: string, password: string }): Promise<User | null> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Fix: Properly await the Promise
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      });
-      
-      if (error) throw error;
-      
-      if (data?.user) {
-        // Create a user object based on Supabase response
-        const user: User = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name || 'User',
-          rewardPoints: data.user.user_metadata?.rewardPoints || 0,
-          role: data.user.email === 'admin@example.com' ? 'admin' : 'user', // Force admin role for admin@example.com
-          joinDate: data.user.created_at ? new Date(data.user.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          pincode: data.user.user_metadata?.pincode,
-          address: data.user.user_metadata?.address,
-        };
-        
-        // Store user in localStorage for our app to use
-        localStorage.setItem('sb-user', JSON.stringify(user));
-        localStorage.setItem('sb-session', 'true'); // Set session flag
-        return user;
-      }
-      return null;
-    }
-    
-    // Fallback to mock data for development
     const mockUser = mockUsers.find(user => user.email === credentials.email);
     if (mockUser) {
       localStorage.setItem('user', JSON.stringify(mockUser));
@@ -221,45 +155,6 @@ export const register = async (userData: {
   address?: string
 }): Promise<User | null> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            name: userData.name,
-            pincode: userData.pincode,
-            address: userData.address,
-            rewardPoints: 0 // Initialize reward points to 0
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.user) {
-        // Create user profile in profiles table
-        const newUser: User = {
-          id: data.user.id,
-          email: userData.email,
-          name: userData.name,
-          rewardPoints: 0,
-          role: 'user',
-          joinDate: new Date().toISOString().split('T')[0],
-          pincode: userData.pincode,
-          address: userData.address,
-        };
-        
-        // Store user in localStorage
-        localStorage.setItem('sb-user', JSON.stringify(newUser));
-        localStorage.setItem('sb-session', 'true'); // Set session flag
-        return newUser;
-      }
-    }
-    
-    // Fallback to mock data for development
     const newUser: User = {
       id: Date.now().toString(),
       email: userData.email,
@@ -282,16 +177,7 @@ export const register = async (userData: {
 // Logout user
 export const logout = (): void => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      supabase.auth.signOut();
-    }
-    
-    // Also remove from localStorage
     localStorage.removeItem('user');
-    localStorage.removeItem('sb-user');
-    localStorage.removeItem('sb-session');
   } catch (error) {
     console.error('Logout error:', error);
   }
@@ -307,35 +193,6 @@ export const updateUser = async (userData: {
     const currentUser = getCurrentUser();
     if (!currentUser) return null;
     
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Update user profile in Supabase
-      const { data, error } = await supabase.auth.updateUser({
-        data: {
-          name: userData.name || currentUser.name,
-          pincode: userData.pincode || currentUser.pincode,
-          address: userData.address || currentUser.address,
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        // Update user in localStorage
-        const updatedUser = {
-          ...currentUser,
-          name: userData.name || currentUser.name,
-          pincode: userData.pincode || currentUser.pincode,
-          address: userData.address || currentUser.address,
-        };
-        
-        localStorage.setItem('sb-user', JSON.stringify(updatedUser));
-        return updatedUser;
-      }
-    }
-    
-    // Fallback to localStorage for development
     const updatedUser = {
       ...currentUser,
       name: userData.name || currentUser.name,
@@ -357,31 +214,6 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
     const currentUser = getCurrentUser();
     if (!currentUser) return null;
     
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Update user points in Supabase
-      const { data, error } = await supabase.auth.updateUser({
-        data: {
-          rewardPoints: (currentUser.rewardPoints || 0) + points
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        // Update user in localStorage
-        const updatedUser = {
-          ...currentUser,
-          rewardPoints: (currentUser.rewardPoints || 0) + points
-        };
-        
-        localStorage.setItem('sb-user', JSON.stringify(updatedUser));
-        return updatedUser;
-      }
-    }
-    
-    // Fallback to localStorage for development
     const updatedUser = {
       ...currentUser,
       rewardPoints: currentUser.rewardPoints + points,
@@ -398,30 +230,6 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
 // Get all users (for admin purposes)
 export const getAllUsers = async (): Promise<User[]> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Get all users from Supabase
-      const { data, error } = await supabase.auth.admin.listUsers();
-      
-      if (error) throw error;
-      
-      if (data?.users) {
-        // Map Supabase users to our User interface
-        return data.users.map(user => ({
-          id: user.id,
-          email: user.email || '',
-          name: user.user_metadata?.name || 'User',
-          rewardPoints: user.user_metadata?.rewardPoints || 0,
-          role: user.email === 'admin@example.com' ? 'admin' : 'user',
-          joinDate: user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          pincode: user.user_metadata?.pincode,
-          address: user.user_metadata?.address,
-        }));
-      }
-    }
-    
-    // Fallback to mock data for development
     return mockUsers;
   } catch (error) {
     console.error('Get all users error:', error);
@@ -432,33 +240,6 @@ export const getAllUsers = async (): Promise<User[]> => {
 // Get user by ID
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Get user from Supabase
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      
-      if (data) {
-        return {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          rewardPoints: data.reward_points || 0,
-          role: data.role || 'user',
-          joinDate: data.created_at ? new Date(data.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          pincode: data.pincode,
-          address: data.address,
-        };
-      }
-    }
-    
-    // Fallback to mock data for development
     const user = mockUsers.find(u => u.id === userId);
     return user || null;
   } catch (error) {
@@ -470,38 +251,6 @@ export const getUserById = async (userId: string): Promise<User | null> => {
 // Get user's reports
 export const getUserReports = async (userId: string): Promise<Report[]> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Get user reports from Supabase
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      
-      if (data) {
-        return data.map((report: any) => ({
-          id: report.id,
-          userId: report.user_id,
-          type: report.type,
-          description: report.description,
-          imageUrl: report.image_url,
-          status: report.status,
-          timestamp: new Date(report.created_at).getTime(),
-          location: report.location ? {
-            address: report.location.address,
-            latitude: report.location.latitude,
-            longitude: report.location.longitude,
-          } : undefined,
-        }));
-      }
-      
-      return [];
-    }
-    
-    // Fallback to mock data for development
     return mockReports.filter(r => r.userId === userId);
   } catch (error) {
     console.error('Get user reports error:', error);
@@ -512,36 +261,6 @@ export const getUserReports = async (userId: string): Promise<Report[]> => {
 // Get all reports (for admin purposes)
 export const getAllReports = async (): Promise<Report[]> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Get all reports from Supabase
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      if (data) {
-        return data.map((report: any) => ({
-          id: report.id,
-          userId: report.user_id,
-          type: report.type,
-          description: report.description,
-          imageUrl: report.image_url,
-          status: report.status,
-          timestamp: new Date(report.created_at).getTime(),
-          location: report.location ? {
-            address: report.location.address,
-            latitude: report.location.latitude,
-            longitude: report.location.longitude,
-          } : undefined,
-        }));
-      }
-    }
-    
-    // Fallback to mock data for development
     return mockReports;
   } catch (error) {
     console.error('Get all reports error:', error);
@@ -555,55 +274,6 @@ export const updateReportStatus = async (
   status: 'approved' | 'rejected'
 ): Promise<boolean> => {
   try {
-    // Try to use Supabase if available
-    if (isSupabaseConfigured()) {
-      const { supabase } = useSupabase();
-      // Update report status in Supabase
-      const { error } = await supabase
-        .from('reports')
-        .update({ status })
-        .eq('id', reportId);
-      
-      if (error) throw error;
-      
-      // If report is approved, add points to user
-      if (status === 'approved') {
-        // Get the report to get the user ID
-        const { data: reportData, error: reportError } = await supabase
-          .from('reports')
-          .select('user_id')
-          .eq('id', reportId)
-          .single();
-        
-        if (reportError) throw reportError;
-        
-        if (reportData) {
-          const userId = reportData.user_id;
-          
-          // Get user data
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('reward_points')
-            .eq('id', userId)
-            .single();
-          
-          if (userError) throw userError;
-          
-          if (userData) {
-            // Update user points
-            const newPoints = (userData.reward_points || 0) + 10;
-            await supabase
-              .from('profiles')
-              .update({ reward_points: newPoints })
-              .eq('id', userId);
-          }
-        }
-      }
-      
-      return true;
-    }
-    
-    // Fallback to mock data for development
     const reportIndex = mockReports.findIndex(r => r.id === reportId);
     if (reportIndex === -1) return false;
     
