@@ -114,8 +114,8 @@ export const isAuthenticated = (): boolean => {
     // First try to use Supabase if available
     if (isSupabaseConfigured()) {
       const { supabase } = useSupabase();
-      const session = supabase.auth.getSession();
-      return !!session;
+      // Fix: We need to check for session in localStorage since getSession() returns a Promise
+      return !!localStorage.getItem('sb-session');
     }
     
     // Fallback to localStorage for development
@@ -143,11 +143,11 @@ export const getCurrentUser = (): User | null => {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
       const { supabase } = useSupabase();
-      const { data } = supabase.auth.getUser();
-      if (data?.user) {
-        // Get user profile from profiles table
-        // This would need to be implemented with proper Supabase queries
-        return data.user as unknown as User;
+      // Fix: We can't await here since we're not in an async function
+      // Instead, check localStorage for the user data that would be set during login
+      const userString = localStorage.getItem('sb-user');
+      if (userString) {
+        return JSON.parse(userString);
       }
       return null;
     }
@@ -170,6 +170,7 @@ export const login = async (credentials: { email: string, password: string }): P
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
       const { supabase } = useSupabase();
+      // Fix: Properly await the Promise
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -178,10 +179,23 @@ export const login = async (credentials: { email: string, password: string }): P
       if (error) throw error;
       
       if (data?.user) {
-        // Get user profile from profiles table
-        // This would need to be implemented with proper Supabase queries
-        return data.user as unknown as User;
+        // Create a user object based on Supabase response
+        const user: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name || 'User',
+          rewardPoints: data.user.user_metadata?.rewardPoints || 0,
+          role: data.user.user_metadata?.role || 'user',
+          joinDate: data.user.created_at ? new Date(data.user.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          pincode: data.user.user_metadata?.pincode,
+          address: data.user.user_metadata?.address,
+        };
+        
+        // Store user in localStorage for our app to use
+        localStorage.setItem('sb-user', JSON.stringify(user));
+        return user;
       }
+      return null;
     }
     
     // Fallback to mock data for development
