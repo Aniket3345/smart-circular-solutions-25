@@ -7,41 +7,14 @@ import { Card } from "@/components/ui/card";
 import UserProfileCard from "@/components/profile/UserProfileCard";
 import RewardPointsCard from "@/components/profile/RewardPointsCard";
 import UserReportsTabs from "@/components/profile/UserReportsTabs";
-import { getCurrentUser, User, isAuthenticated } from "@/utils/auth";
+import { getCurrentUser, User, isAuthenticated, getUserReports } from "@/utils/auth";
 import { toast } from "@/hooks/use-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  
-  // Sample reports data - in a real app, this would come from an API
-  const reportsData = [
-    {
-      id: 1,
-      title: "Garbage pile on Marine Drive",
-      location: "Marine Drive, Mumbai",
-      date: "2023-12-10",
-      category: "waste",
-      image: "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FyYmFnZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 2,
-      title: "Street flooding near railway station",
-      location: "Dadar, Mumbai",
-      date: "2024-01-15",
-      category: "flood",
-      image: "https://images.unsplash.com/photo-1613559806609-790411b0cea4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zmxvb2R8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 3,
-      title: "Power line down after storm",
-      location: "Bandra, Mumbai",
-      date: "2024-02-20",
-      category: "electricity",
-      image: "https://images.unsplash.com/photo-1621954809142-7c5c73da001c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cG93ZXIlMjBsaW5lfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
-    },
-    // ... more reports
-  ];
+  const [userReports, setUserReports] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load user data on component mount
   useEffect(() => {
@@ -56,22 +29,54 @@ const Profile = () => {
       return;
     }
     
-    // Get current user data
-    const userData = getCurrentUser();
-    if (userData) {
-      setUser(userData);
-    } else {
-      toast.open({
-        title: "Error loading profile",
-        description: "Unable to load user data. Please try logging in again.",
-        variant: "destructive",
-      });
-      navigate('/login');
-    }
+    const loadUserData = async () => {
+      try {
+        setIsLoading(true);
+        // Get current user data
+        const userData = getCurrentUser();
+        if (userData) {
+          setUser(userData);
+          
+          // Get user reports
+          if (userData.id) {
+            const reports = await getUserReports(userData.id);
+            // Format reports for the UI
+            const formattedReports = reports.map(report => ({
+              id: report.id,
+              title: `${report.type.charAt(0).toUpperCase() + report.type.slice(1)} issue reported`,
+              location: report.location?.address || "Unknown location",
+              date: new Date(report.timestamp).toISOString().split('T')[0],
+              category: report.type,
+              image: report.imageUrl || "",
+              description: report.description
+            }));
+            setUserReports(formattedReports);
+          }
+        } else {
+          toast.open({
+            title: "Error loading profile",
+            description: "Unable to load user data. Please try logging in again.",
+            variant: "destructive",
+          });
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error("Error loading profile data:", error);
+        toast.open({
+          title: "Error",
+          description: "Something went wrong while loading your profile.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadUserData();
   }, [navigate]);
 
   // If user data is still loading, show a loading state
-  if (!user) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[70vh]">
         <div className="text-center">
@@ -97,15 +102,15 @@ const Profile = () => {
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <UserProfileCard user={user} setUser={setUser} />
-        <RewardPointsCard points={user?.rewardPoints || 0} totalReports={reportsData.length} />
+        <RewardPointsCard points={user?.rewardPoints || 0} totalReports={userReports.length} />
       </div>
 
       <Card className="p-6">
         <h2 className="text-2xl font-semibold mb-4">My Reports</h2>
         <UserReportsTabs 
-          wasteReports={reportsData.filter(r => r.category === 'waste')}
-          floodReports={reportsData.filter(r => r.category === 'flood')}
-          electricityReports={reportsData.filter(r => r.category === 'electricity')}
+          wasteReports={userReports.filter(r => r.category === 'waste')}
+          floodReports={userReports.filter(r => r.category === 'flood')}
+          electricityReports={userReports.filter(r => r.category === 'electricity')}
           formatDate={(date) => new Date(date).toLocaleDateString()}
           deleteReport={() => {}} // Placeholder for delete functionality
         />

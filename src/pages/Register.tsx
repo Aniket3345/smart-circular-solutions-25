@@ -31,7 +31,7 @@ const Register = () => {
         return;
       }
       
-      const success = await register({
+      const user = await register({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -39,9 +39,9 @@ const Register = () => {
         address: data.address
       });
       
-      console.log("Registration success:", success);
+      console.log("Registration success:", user);
       
-      if (success) {
+      if (user) {
         toast.open({
           title: "Registration successful",
           description: "Your account has been created. Welcome to Smart Circular!",

@@ -1,18 +1,28 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 
-// Declare a global variable to store the Supabase client instance
-let supabaseClient: SupabaseClient | null = null;
+// Create a context for Supabase
+type SupabaseContextType = {
+  supabase: SupabaseClient | null;
+  isInitialized: boolean;
+  error: Error | null;
+};
 
-export const useSupabase = () => {
+const SupabaseContext = createContext<SupabaseContextType>({
+  supabase: null,
+  isInitialized: false,
+  error: null
+});
+
+// Provider component to initialize Supabase once
+export function SupabaseProvider({ children }: { children: React.ReactNode }) {
+  const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Initialize Supabase client if it hasn't been already
   useEffect(() => {
     if (supabaseClient) {
-      setIsInitialized(true);
       return;
     }
     
@@ -21,7 +31,8 @@ export const useSupabase = () => {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (supabaseUrl && supabaseKey) {
-        supabaseClient = createClient(supabaseUrl, supabaseKey);
+        const client = createClient(supabaseUrl, supabaseKey);
+        setSupabaseClient(client);
         console.log('Supabase client initialized successfully');
         setIsInitialized(true);
       } else {
@@ -34,9 +45,18 @@ export const useSupabase = () => {
     }
   }, []);
   
-  return { 
-    supabase: supabaseClient, 
-    isInitialized, 
-    error 
-  };
+  return (
+    <SupabaseContext.Provider value={{ 
+      supabase: supabaseClient, 
+      isInitialized, 
+      error 
+    }}>
+      {children}
+    </SupabaseContext.Provider>
+  );
+}
+
+// Hook to use Supabase within components
+export const useSupabase = () => {
+  return useContext(SupabaseContext);
 };

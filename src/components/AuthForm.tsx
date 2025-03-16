@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,8 @@ const AuthForm: React.FC<AuthFormProps> = ({
   
   const [formData, setFormData] = useState({
     name: '',
-    email: loginType === 'admin' ? 'admin' : '',
-    password: loginType === 'admin' ? 'admin' : '',
+    email: '',
+    password: '',
     pincode: '',
     address: ''
   });
@@ -36,6 +36,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
     password: '',
     name: ''
   });
+
+  // Set default admin credentials if in admin mode
+  useEffect(() => {
+    if (loginType === 'admin' && type === 'login') {
+      setFormData(prev => ({
+        ...prev,
+        email: 'admin@example.com',
+        password: 'admin123'
+      }));
+    }
+  }, [loginType, type]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,13 +59,18 @@ const AuthForm: React.FC<AuthFormProps> = ({
   };
 
   const validateForm = () => {
+    // Skip validation for admin login
+    if (loginType === 'admin' && type === 'login') {
+      return true;
+    }
+    
     let valid = true;
     const newErrors = { ...errors };
     
     if (!formData.email) {
       newErrors.email = 'Email is required';
       valid = false;
-    } else if (loginType !== 'admin' && !/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
       valid = false;
     }
@@ -62,7 +78,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
     if (!formData.password) {
       newErrors.password = 'Password is required';
       valid = false;
-    } else if (loginType !== 'admin' && formData.password.length < 6) {
+    } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
       valid = false;
     }
@@ -109,7 +125,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         <CardDescription>
           {type === 'login' 
             ? loginType === 'admin'
-              ? 'Enter admin credentials to access the dashboard'
+              ? 'Click the button below to access the admin dashboard'
               : 'Enter your credentials to access your account' 
             : 'Fill in the details below to create your account'}
         </CardDescription>
@@ -134,41 +150,43 @@ const AuthForm: React.FC<AuthFormProps> = ({
             </div>
           )}
           
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              {loginType === 'admin' ? 'Username' : 'Email'}
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type={loginType === 'admin' ? 'text' : 'email'}
-              placeholder={loginType === 'admin' ? 'admin' : 'your@email.com'}
-              value={formData.email}
-              onChange={handleChange}
-              required
-              autoComplete={loginType === 'admin' ? 'username' : 'email'}
-              className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
-              disabled={isLoading}
-            />
-            {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              autoComplete={type === 'login' ? 'current-password' : 'new-password'}
-              className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
-              disabled={isLoading}
-            />
-            {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
-          </div>
+          {(type !== 'login' || loginType !== 'admin') && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  autoComplete="email"
+                  className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
+                  disabled={isLoading}
+                />
+                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete={type === 'login' ? 'current-password' : 'new-password'}
+                  className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
+                  disabled={isLoading}
+                />
+                {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
+              </div>
+            </>
+          )}
           
           {type === 'register' && (
             <>
@@ -213,7 +231,11 @@ const AuthForm: React.FC<AuthFormProps> = ({
                 {type === 'login' ? 'Logging in...' : 'Creating account...'}
               </>
             ) : (
-              type === 'login' ? 'Login' : 'Create Account'
+              type === 'login' 
+                ? loginType === 'admin' 
+                  ? 'Login as Admin' 
+                  : 'Login' 
+                : 'Create Account'
             )}
           </Button>
         </form>

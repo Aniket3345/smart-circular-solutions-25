@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
-import { login, isAdmin } from '@/utils/auth';
+import { login, isAdmin, getCurrentUser } from '@/utils/auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from "@/hooks/use-toast";
 
@@ -22,14 +22,20 @@ const Login = () => {
     try {
       console.log("Login attempt with:", data);
       
-      const success = await login({
+      // For admin login, force email and password
+      if (loginType === 'admin') {
+        data.email = 'admin@example.com';
+        data.password = 'admin123';
+      }
+      
+      const user = await login({
         email: data.email,
         password: data.password
       });
       
-      console.log("Login success:", success);
+      console.log("Login success:", user);
       
-      if (success) {
+      if (user) {
         // After successful login, check if admin and redirect accordingly
         if (loginType === 'admin') {
           if (isAdmin()) {
@@ -99,7 +105,7 @@ const Login = () => {
             </TabsContent>
             <TabsContent value="admin">
               <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">Admin credentials: username "admin", password "admin"</p>
+                <p className="text-sm text-muted-foreground">Login to admin dashboard with single click</p>
               </div>
             </TabsContent>
           </Tabs>
