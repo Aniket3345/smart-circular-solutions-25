@@ -198,57 +198,17 @@ const Admin = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <TabsList className="w-full grid grid-cols-7">
-              <TabsTrigger 
-                value="all" 
-                onClick={() => filterReports('all')}
-                data-state={currentFilter === 'all' ? 'active' : ''}
-              >
-                All
-              </TabsTrigger>
-              <TabsTrigger 
-                value="waste" 
-                onClick={() => filterReports('waste')}
-                data-state={currentFilter === 'waste' ? 'active' : ''}
-              >
-                Waste
-              </TabsTrigger>
-              <TabsTrigger 
-                value="flood" 
-                onClick={() => filterReports('flood')}
-                data-state={currentFilter === 'flood' ? 'active' : ''}
-              >
-                Flood
-              </TabsTrigger>
-              <TabsTrigger 
-                value="electricity" 
-                onClick={() => filterReports('electricity')}
-                data-state={currentFilter === 'electricity' ? 'active' : ''}
-              >
-                Electricity
-              </TabsTrigger>
-              <TabsTrigger 
-                value="pending" 
-                onClick={() => filterReports('pending')}
-                data-state={currentFilter === 'pending' ? 'active' : ''}
-              >
-                Pending
-              </TabsTrigger>
-              <TabsTrigger 
-                value="approved" 
-                onClick={() => filterReports('approved')}
-                data-state={currentFilter === 'approved' ? 'active' : ''}
-              >
-                Approved
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rejected" 
-                onClick={() => filterReports('rejected')}
-                data-state={currentFilter === 'rejected' ? 'active' : ''}
-              >
-                Rejected
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue={currentFilter} onValueChange={filterReports}>
+              <TabsList className="w-full grid grid-cols-7">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="waste">Waste</TabsTrigger>
+                <TabsTrigger value="flood">Flood</TabsTrigger>
+                <TabsTrigger value="electricity">Electricity</TabsTrigger>
+                <TabsTrigger value="pending">Pending</TabsTrigger>
+                <TabsTrigger value="approved">Approved</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           {filteredReports.length === 0 ? (
