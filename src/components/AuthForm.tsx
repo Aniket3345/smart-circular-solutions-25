@@ -59,11 +59,6 @@ const AuthForm: React.FC<AuthFormProps> = ({
   };
 
   const validateForm = () => {
-    // Skip validation for admin login
-    if (loginType === 'admin' && type === 'login') {
-      return true;
-    }
-    
     let valid = true;
     const newErrors = { ...errors };
     
@@ -125,7 +120,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         <CardDescription>
           {type === 'login' 
             ? loginType === 'admin'
-              ? 'Click the button below to access the admin dashboard'
+              ? 'Enter your admin credentials to access the dashboard'
               : 'Enter your credentials to access your account' 
             : 'Fill in the details below to create your account'}
         </CardDescription>
@@ -150,43 +145,39 @@ const AuthForm: React.FC<AuthFormProps> = ({
             </div>
           )}
           
-          {(type !== 'login' || loginType !== 'admin') && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  autoComplete="email"
-                  className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
-                  disabled={isLoading}
-                />
-                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  autoComplete={type === 'login' ? 'current-password' : 'new-password'}
-                  className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
-                  disabled={isLoading}
-                />
-                {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
+              className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
+              disabled={isLoading || (loginType === 'admin' && type === 'login')}
+            />
+            {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              autoComplete={type === 'login' ? 'current-password' : 'new-password'}
+              className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
+              disabled={isLoading || (loginType === 'admin' && type === 'login')}
+            />
+            {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
+          </div>
           
           {type === 'register' && (
             <>
@@ -240,7 +231,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
           </Button>
         </form>
       </CardContent>
-      {loginType !== 'admin' && (
+      {type === 'login' && (
         <CardFooter className="flex justify-center border-t pt-4">
           {type === 'login' ? (
             <p className="text-sm text-muted-foreground">

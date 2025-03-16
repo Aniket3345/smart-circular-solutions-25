@@ -22,12 +22,6 @@ const Login = () => {
     try {
       console.log("Login attempt with:", data);
       
-      // For admin login, force email and password
-      if (loginType === 'admin') {
-        data.email = 'admin@example.com';
-        data.password = 'admin123';
-      }
-      
       const user = await login({
         email: data.email,
         password: data.password
@@ -105,7 +99,7 @@ const Login = () => {
             </TabsContent>
             <TabsContent value="admin">
               <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">Login to admin dashboard with single click</p>
+                <p className="text-sm text-muted-foreground">Login to admin dashboard</p>
               </div>
             </TabsContent>
           </Tabs>
