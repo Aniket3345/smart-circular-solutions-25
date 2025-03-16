@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -13,31 +14,44 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (data: any) => {
-    const success = await login({
-      email: data.email,
-      password: data.password
-    });
-    
-    if (success) {
-      // After successful login, check if admin and redirect accordingly
-      if (loginType === 'admin') {
-        if (isAdmin()) {
-          toast.open({
-            title: "Admin login successful",
-            description: "Redirecting to admin dashboard",
-          });
-          navigate('/admin');
+    try {
+      const success = await login({
+        email: data.email,
+        password: data.password
+      });
+      
+      if (success) {
+        // After successful login, check if admin and redirect accordingly
+        if (loginType === 'admin') {
+          if (isAdmin()) {
+            toast.open({
+              title: "Admin login successful",
+              description: "Redirecting to admin dashboard",
+            });
+            navigate('/admin');
+          } else {
+            toast.open({
+              title: "Access denied",
+              description: "You don't have admin privileges",
+              variant: "destructive",
+            });
+            navigate('/');
+          }
         } else {
           toast.open({
-            title: "Access denied",
-            description: "You don't have admin privileges",
-            variant: "destructive",
+            title: "Login successful",
+            description: "Welcome back!",
           });
           navigate('/');
         }
-      } else {
-        navigate('/');
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.open({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive",
+      });
     }
   };
 

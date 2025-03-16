@@ -1,21 +1,41 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { register } from '@/utils/auth';
+import { toast } from "@/hooks/use-toast";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const handleRegister = async (data: any) => {
-    await register({
-      name: data.name,
-      email: data.email,
-      password: data.password,
-      pincode: data.pincode,
-      address: data.address
-    });
+    try {
+      const success = await register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        pincode: data.pincode,
+        address: data.address
+      });
+      
+      if (success) {
+        toast.open({
+          title: "Registration successful",
+          description: "Your account has been created. Welcome to Smart Circular!",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.open({
+        title: "Registration failed",
+        description: "Please check your information and try again",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

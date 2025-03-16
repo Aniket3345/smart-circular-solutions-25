@@ -24,7 +24,7 @@ const App = () => {
       <TooltipProvider>
         <ToastProvider>
           <Toaster />
-          <Sonner position="top-right" />
+          <Sonner position="top-right" closeButton={true} />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

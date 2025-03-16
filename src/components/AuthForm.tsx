@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -82,14 +81,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
     
     try {
       await onSubmit(formData);
-      
-      toast.open({
-        title: type === 'login' ? 'Welcome back!' : 'Account created successfully',
-        description: type === 'login' 
-          ? 'You have successfully logged in.' 
-          : 'Your account has been created. Welcome to Smart Circular!',
-      });
-      
     } catch (error) {
       console.error('Auth error:', error);
       toast.open({
