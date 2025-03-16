@@ -43,7 +43,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       console.error('Error initializing Supabase client:', err);
       setError(err as Error);
     }
-  }, []);
+  }, [supabaseClient]);
   
   return (
     <SupabaseContext.Provider value={{ 
