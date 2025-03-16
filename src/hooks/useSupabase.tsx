@@ -1,5 +1,6 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
+import { isAuthenticated as checkAuth } from '@/utils/auth';
 
 // Create a context for auth state
 type AuthContextType = {
@@ -23,11 +24,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if user is logged in using localStorage
     try {
-      const user = localStorage.getItem('user');
-      if (user) {
-        setIsAuthenticated(true);
-      }
+      const isUserAuthenticated = checkAuth();
+      setIsAuthenticated(isUserAuthenticated);
       setIsLoading(false);
+      console.log("Auth check complete, user authenticated:", isUserAuthenticated);
     } catch (err) {
       console.error('Error checking authentication:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
