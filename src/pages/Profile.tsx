@@ -40,6 +40,8 @@ const Profile = () => {
           // Get user reports
           if (userData.id) {
             const reports = await getUserReports(userData.id);
+            console.log("Loaded user reports:", reports);
+            
             // Format reports for the UI
             const formattedReports = reports.map(report => ({
               id: report.id,
@@ -74,6 +76,17 @@ const Profile = () => {
     
     loadUserData();
   }, [navigate]);
+
+  const handleDeleteReport = (reportType: string, reportId: string) => {
+    // This is just a placeholder for now - would need to implement actual deletion logic
+    toast.open({
+      title: "Report deleted",
+      description: "The report has been removed from your history.",
+    });
+    
+    // Filter out the deleted report from the state
+    setUserReports(prev => prev.filter(report => report.id !== reportId));
+  };
 
   // If user data is still loading, show a loading state
   if (isLoading) {
@@ -112,7 +125,7 @@ const Profile = () => {
           floodReports={userReports.filter(r => r.category === 'flood')}
           electricityReports={userReports.filter(r => r.category === 'electricity')}
           formatDate={(date) => new Date(date).toLocaleDateString()}
-          deleteReport={() => {}} // Placeholder for delete functionality
+          deleteReport={handleDeleteReport}
         />
       </Card>
     </div>

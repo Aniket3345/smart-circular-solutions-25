@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,17 +36,6 @@ const AuthForm: React.FC<AuthFormProps> = ({
     password: '',
     name: ''
   });
-
-  // Set default admin credentials if in admin mode
-  useEffect(() => {
-    if (loginType === 'admin' && type === 'login') {
-      setFormData(prev => ({
-        ...prev,
-        email: 'admin@example.com',
-        password: 'admin123'
-      }));
-    }
-  }, [loginType, type]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -157,7 +146,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
               required
               autoComplete="email"
               className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
-              disabled={isLoading || (loginType === 'admin' && type === 'login')}
+              disabled={isLoading}
             />
             {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
           </div>
@@ -174,7 +163,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
               required
               autoComplete={type === 'login' ? 'current-password' : 'new-password'}
               className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
-              disabled={isLoading || (loginType === 'admin' && type === 'login')}
+              disabled={isLoading}
             />
             {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
           </div>

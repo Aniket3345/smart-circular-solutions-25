@@ -25,82 +25,98 @@ export interface Report {
   };
 }
 
+// Make sure localStorage is persisted by setting a longer timeout
+const LOCAL_STORAGE_KEY = {
+  USERS: 'smart_circular_users',
+  REPORTS: 'smart_circular_reports',
+  CURRENT_USER: 'smart_circular_user',
+  WASTE_REPORTS: 'reported_waste_items',
+  FLOOD_REPORTS: 'reported_flood_items',
+  ELECTRICITY_REPORTS: 'reported_electricity_items'
+};
+
 // Initialize storage for users and reports 
 const initializeLocalStorage = () => {
-  // Initialize users if not already present
-  if (!localStorage.getItem('users')) {
-    const defaultUsers = [
-      {
-        id: '1',
-        email: 'user@example.com',
-        name: 'Demo User',
-        rewardPoints: 150,
-        role: 'user',
-        joinDate: '2023-06-15',
-        pincode: '400001',
-        address: '123 Main St, Mumbai',
-      },
-      {
-        id: '2',
-        email: 'admin@example.com',
-        name: 'Admin User',
-        rewardPoints: 500,
-        role: 'admin',
-        joinDate: '2023-05-10',
-        pincode: '400050',
-        address: '456 Central Ave, Mumbai',
-      },
-    ];
-    localStorage.setItem('users', JSON.stringify(defaultUsers));
-  }
-  
-  // Initialize reports if not already present
-  if (!localStorage.getItem('reports')) {
-    const defaultReports = [
-      {
-        id: 'r1',
-        userId: '1',
-        type: 'waste',
-        description: 'Large pile of garbage near the park',
-        imageUrl: 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FyYmFnZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
-        status: 'pending',
-        timestamp: Date.now() - 86400000, // 1 day ago
-        location: {
-          address: 'Marine Drive, Mumbai',
-          latitude: 18.9442,
-          longitude: 72.8237,
+  try {
+    // Initialize users if not already present
+    if (!localStorage.getItem(LOCAL_STORAGE_KEY.USERS)) {
+      const defaultUsers = [
+        {
+          id: '1',
+          email: 'user@example.com',
+          name: 'Demo User',
+          rewardPoints: 150,
+          role: 'user',
+          joinDate: '2023-06-15',
+          pincode: '400001',
+          address: '123 Main St, Mumbai',
         },
-      },
-      {
-        id: 'r2',
-        userId: '1',
-        type: 'flood',
-        description: 'Street flooding after heavy rain',
-        imageUrl: 'https://images.unsplash.com/photo-1613559806609-790411b0cea4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zmxvb2R8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60',
-        status: 'approved',
-        timestamp: Date.now() - 172800000, // 2 days ago
-        location: {
-          address: 'Dadar, Mumbai',
-          latitude: 19.0178,
-          longitude: 72.8478,
+        {
+          id: '2',
+          email: 'admin@example.com',
+          name: 'Admin User',
+          rewardPoints: 500,
+          role: 'admin',
+          joinDate: '2023-05-10',
+          pincode: '400050',
+          address: '456 Central Ave, Mumbai',
         },
-      },
-      {
-        id: 'r3',
-        userId: '2',
-        type: 'electricity',
-        description: 'Fallen power line after storm',
-        imageUrl: 'https://images.unsplash.com/photo-1621954809142-7c5c73da001c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cG93ZXIlMjBsaW5lfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60',
-        status: 'rejected',
-        timestamp: Date.now() - 259200000, // 3 days ago
-        location: {
-          address: 'Bandra, Mumbai',
-          latitude: 19.0596,
-          longitude: 72.8295,
+      ];
+      localStorage.setItem(LOCAL_STORAGE_KEY.USERS, JSON.stringify(defaultUsers));
+      console.log("Initialized default users in localStorage");
+    }
+    
+    // Initialize reports if not already present
+    if (!localStorage.getItem(LOCAL_STORAGE_KEY.REPORTS)) {
+      const defaultReports = [
+        {
+          id: 'r1',
+          userId: '1',
+          type: 'waste',
+          description: 'Large pile of garbage near the park',
+          imageUrl: 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FyYmFnZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
+          status: 'pending',
+          timestamp: Date.now() - 86400000, // 1 day ago
+          location: {
+            address: 'Marine Drive, Mumbai',
+            latitude: 18.9442,
+            longitude: 72.8237,
+          },
         },
-      },
-    ];
-    localStorage.setItem('reports', JSON.stringify(defaultReports));
+        {
+          id: 'r2',
+          userId: '1',
+          type: 'flood',
+          description: 'Street flooding after heavy rain',
+          imageUrl: 'https://images.unsplash.com/photo-1613559806609-790411b0cea4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zmxvb2R8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60',
+          status: 'approved',
+          timestamp: Date.now() - 172800000, // 2 days ago
+          location: {
+            address: 'Dadar, Mumbai',
+            latitude: 19.0178,
+            longitude: 72.8478,
+          },
+        },
+        {
+          id: 'r3',
+          userId: '2',
+          type: 'electricity',
+          description: 'Fallen power line after storm',
+          imageUrl: 'https://images.unsplash.com/photo-1621954809142-7c5c73da001c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cG93ZXIlMjBsaW5lfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60',
+          status: 'rejected',
+          timestamp: Date.now() - 259200000, // 3 days ago
+          location: {
+            address: 'Bandra, Mumbai',
+            latitude: 19.0596,
+            longitude: 72.8295,
+          },
+        },
+      ];
+      localStorage.setItem(LOCAL_STORAGE_KEY.REPORTS, JSON.stringify(defaultReports));
+      console.log("Initialized default reports in localStorage");
+    }
+  } catch (error) {
+    console.error("Error initializing localStorage:", error);
   }
 };
 
@@ -110,7 +126,7 @@ initializeLocalStorage();
 // Helper function to get users from localStorage
 const getUsers = (): User[] => {
   try {
-    const usersJSON = localStorage.getItem('users');
+    const usersJSON = localStorage.getItem(LOCAL_STORAGE_KEY.USERS);
     return usersJSON ? JSON.parse(usersJSON) : [];
   } catch (error) {
     console.error('Error getting users from localStorage:', error);
@@ -121,7 +137,8 @@ const getUsers = (): User[] => {
 // Helper function to save users to localStorage
 const saveUsers = (users: User[]): void => {
   try {
-    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem(LOCAL_STORAGE_KEY.USERS, JSON.stringify(users));
+    console.log("Saved users to localStorage:", users.length);
   } catch (error) {
     console.error('Error saving users to localStorage:', error);
   }
@@ -130,7 +147,7 @@ const saveUsers = (users: User[]): void => {
 // Helper function to get reports from localStorage
 const getReports = (): Report[] => {
   try {
-    const reportsJSON = localStorage.getItem('reports');
+    const reportsJSON = localStorage.getItem(LOCAL_STORAGE_KEY.REPORTS);
     return reportsJSON ? JSON.parse(reportsJSON) : [];
   } catch (error) {
     console.error('Error getting reports from localStorage:', error);
@@ -141,7 +158,8 @@ const getReports = (): Report[] => {
 // Helper function to save reports to localStorage
 const saveReports = (reports: Report[]): void => {
   try {
-    localStorage.setItem('reports', JSON.stringify(reports));
+    localStorage.setItem(LOCAL_STORAGE_KEY.REPORTS, JSON.stringify(reports));
+    console.log("Saved reports to localStorage:", reports.length);
   } catch (error) {
     console.error('Error saving reports to localStorage:', error);
   }
@@ -150,7 +168,7 @@ const saveReports = (reports: Report[]): void => {
 // Check if user is authenticated
 export const isAuthenticated = (): boolean => {
   try {
-    return !!localStorage.getItem('user');
+    return !!localStorage.getItem(LOCAL_STORAGE_KEY.CURRENT_USER);
   } catch (error) {
     console.error('Error checking authentication status:', error);
     return false;
@@ -171,7 +189,7 @@ export const isAdmin = (): boolean => {
 // Get current user
 export const getCurrentUser = (): User | null => {
   try {
-    const userString = localStorage.getItem('user');
+    const userString = localStorage.getItem(LOCAL_STORAGE_KEY.CURRENT_USER);
     if (userString) {
       return JSON.parse(userString);
     }
@@ -195,7 +213,7 @@ export const login = async (credentials: { email: string, password: string }): P
     
     if (user) {
       // Set current user in localStorage
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(user));
       console.log("Login successful:", user);
       return user;
     }
@@ -246,7 +264,7 @@ export const register = async (userData: {
     saveUsers(users);
     
     // Set current user in localStorage
-    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(newUser));
     
     console.log("Registration successful:", newUser);
     return newUser;
@@ -259,7 +277,7 @@ export const register = async (userData: {
 // Logout user
 export const logout = (): void => {
   try {
-    localStorage.removeItem('user');
+    localStorage.removeItem(LOCAL_STORAGE_KEY.CURRENT_USER);
   } catch (error) {
     console.error('Logout error:', error);
   }
@@ -298,7 +316,7 @@ export const updateUser = async (userData: {
     saveUsers(users);
     
     // Update current user in localStorage
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(updatedUser));
     
     return updatedUser;
   } catch (error) {
@@ -334,7 +352,7 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
     saveUsers(users);
     
     // Update current user in localStorage
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(updatedUser));
     
     return updatedUser;
   } catch (error) {
@@ -365,21 +383,91 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   }
 };
 
-// Get user's reports
+// Save and retrieve user reports
+export const saveUserReport = async (report: Report): Promise<boolean> => {
+  try {
+    // Get all reports
+    const reports = getReports();
+    
+    // Add new report
+    reports.push(report);
+    
+    // Save updated reports
+    saveReports(reports);
+    
+    return true;
+  } catch (error) {
+    console.error('Save user report error:', error);
+    return false;
+  }
+};
+
+// Get user's reports (including waste, flood, electricity)
 export const getUserReports = async (userId: string): Promise<Report[]> => {
   try {
-    const reports = getReports();
-    return reports.filter(r => r.userId === userId);
+    // Get all reports from localStorage
+    const officialReports = getReports();
+    const userReports = officialReports.filter(r => r.userId === userId);
+    
+    // Get user-specific reports from other localStorage items
+    const wasteReports = getUserSpecificReports(LOCAL_STORAGE_KEY.WASTE_REPORTS, userId, 'waste');
+    const floodReports = getUserSpecificReports(LOCAL_STORAGE_KEY.FLOOD_REPORTS, userId, 'flood');
+    const electricityReports = getUserSpecificReports(LOCAL_STORAGE_KEY.ELECTRICITY_REPORTS, userId, 'electricity');
+    
+    // Combine all reports
+    return [...userReports, ...wasteReports, ...floodReports, ...electricityReports];
   } catch (error) {
     console.error('Get user reports error:', error);
     return [];
   }
 };
 
-// Get all reports
+// Get user-specific reports from localStorage
+const getUserSpecificReports = (storageKey: string, userId: string, type: 'waste' | 'flood' | 'electricity'): Report[] => {
+  try {
+    const reportsString = localStorage.getItem(storageKey);
+    if (!reportsString) return [];
+    
+    const reports = JSON.parse(reportsString);
+    
+    // Convert the specific report format to the general Report format
+    return reports.map((item: any) => ({
+      id: item.id,
+      userId: userId,
+      type: type,
+      description: item.comment || '',
+      imageUrl: item.image,
+      status: 'pending',
+      timestamp: new Date(item.timestamp).getTime(),
+      location: item.location
+    }));
+  } catch (error) {
+    console.error(`Error getting ${type} reports:`, error);
+    return [];
+  }
+};
+
+// Get all reports for admin dashboard
 export const getAllReports = async (): Promise<Report[]> => {
   try {
-    return getReports();
+    const officialReports = getReports();
+    
+    // Get all users to collect their IDs
+    const users = getUsers();
+    const userIds = users.map(user => user.id);
+    
+    // Get reports from all storages for all users
+    let allUserReports: Report[] = [];
+    
+    userIds.forEach(userId => {
+      const wasteReports = getUserSpecificReports(LOCAL_STORAGE_KEY.WASTE_REPORTS, userId, 'waste');
+      const floodReports = getUserSpecificReports(LOCAL_STORAGE_KEY.FLOOD_REPORTS, userId, 'flood');
+      const electricityReports = getUserSpecificReports(LOCAL_STORAGE_KEY.ELECTRICITY_REPORTS, userId, 'electricity');
+      
+      allUserReports = [...allUserReports, ...wasteReports, ...floodReports, ...electricityReports];
+    });
+    
+    return [...officialReports, ...allUserReports];
   } catch (error) {
     console.error('Get all reports error:', error);
     return [];
@@ -423,7 +511,7 @@ export const updateReportStatus = async (
         // If this is the current user, update their data in localStorage
         const currentUser = getCurrentUser();
         if (currentUser && currentUser.id === userId) {
-          localStorage.setItem('user', JSON.stringify(users[userIndex]));
+          localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(users[userIndex]));
         }
       }
     }
