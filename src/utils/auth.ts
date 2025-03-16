@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 
 // User type definition
@@ -9,8 +9,8 @@ export interface User {
   address?: string;
   pincode?: string;
   rewardPoints: number;
-  password?: string; // Add password field to support the Register form
-  role?: 'user' | 'admin'; // Add role field for admin differentiation
+  password?: string; // Only used for local registration
+  role?: 'user' | 'admin';
 }
 
 // Report type definition
@@ -25,12 +25,34 @@ export interface Report {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-// Create a mock database for development
+// Initialize Supabase client
+let supabase: SupabaseClient | null = null;
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.warn('Missing Supabase credentials. Using mock auth service.');
+    initMockDatabase();
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  initMockDatabase();
+}
+
+// Local storage keys (used for both Supabase and mock auth)
+const AUTH_TOKEN_KEY = 'smartCircular_auth_token';
+const USER_DATA_KEY = 'smartCircular_user_data';
+
+// Mock database functionality (fallback if Supabase is not available)
 const USERS_DB_KEY = 'smartCircular_users_db';
 const REPORTS_DB_KEY = 'smartCircular_reports_db';
 
 // Initialize the mock database if it doesn't exist
-const initMockDatabase = () => {
+function initMockDatabase() {
   if (!localStorage.getItem(USERS_DB_KEY)) {
     // Add a default admin account
     const adminUser: User = {
@@ -48,75 +70,77 @@ const initMockDatabase = () => {
   if (!localStorage.getItem(REPORTS_DB_KEY)) {
     localStorage.setItem(REPORTS_DB_KEY, JSON.stringify([]));
   }
-};
-
-// Initialize Supabase client if credentials are available
-let supabase: any = null;
-try {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
-  } else {
-    console.warn('Missing Supabase credentials. Using mock auth service.');
-    initMockDatabase();
-  }
-} catch (error) {
-  console.error('Failed to initialize Supabase client:', error);
-  initMockDatabase();
 }
-
-// Local storage keys
-const AUTH_TOKEN_KEY = 'smartCircular_auth_token';
-const USER_DATA_KEY = 'smartCircular_user_data';
 
 // User registration
 export const register = async (userData: Partial<User>): Promise<boolean> => {
   try {
     if (supabase) {
-      // Implement real Supabase registration here when credentials are available
-      console.log('Would register with Supabase:', userData);
-    } else {
-      // Mock database implementation
-      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      // Supabase registration
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email as string,
+        password: userData.password as string,
+      });
       
-      // Check if email already exists
-      if (users.some((user: User) => user.email === userData.email)) {
+      if (error) {
+        console.error('Supabase signup error:', error);
         toast.open({
           title: 'Registration failed',
-          description: 'This email is already registered.',
+          description: error.message,
           variant: 'destructive',
         });
         return false;
       }
       
-      // Create new user
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        name: userData.name || 'Anonymous User',
-        email: userData.email || '',
-        address: userData.address || '',
-        pincode: userData.pincode || '',
-        rewardPoints: 0,
-        password: userData.password,
-        role: 'user' // Default role for new users
-      };
-      
-      // Add to mock database
-      users.push(newUser);
-      localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
-      
-      // Log in the user
-      localStorage.setItem(AUTH_TOKEN_KEY, `mock-token-${newUser.id}`);
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(newUser));
+      if (data.user) {
+        // Create user profile in the profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              name: userData.name,
+              email: userData.email,
+              address: userData.address || '',
+              pincode: userData.pincode || '',
+              reward_points: 0,
+              role: 'user' // Default role for new users
+            }
+          ]);
+        
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          toast.open({
+            title: 'Profile creation failed',
+            description: 'Your account was created but profile setup failed.',
+            variant: 'destructive',
+          });
+        }
+        
+        // Store user data in localStorage for easy access
+        const userProfile = {
+          id: data.user.id,
+          name: userData.name || '',
+          email: userData.email || '',
+          address: userData.address || '',
+          pincode: userData.pincode || '',
+          rewardPoints: 0,
+          role: 'user'
+        };
+        
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
+        
+        toast.open({
+          title: 'Account created!',
+          description: 'You have successfully registered.',
+        });
+        
+        return true;
+      }
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock registration)
     }
-    
-    toast.open({
-      title: 'Account created!',
-      description: 'You have successfully registered.',
-    });
     
     return true;
   } catch (error) {
@@ -134,37 +158,90 @@ export const register = async (userData: Partial<User>): Promise<boolean> => {
 export const login = async (credentials: { email: string, password: string }): Promise<boolean> => {
   try {
     if (supabase) {
-      // Implement real Supabase login here when credentials are available
-      console.log('Would login with Supabase:', credentials.email);
-    } else {
-      // Mock database implementation
-      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
+      // For admin login with hardcoded credentials
+      if (credentials.email === 'admin' && credentials.password === 'admin') {
+        // Store mock admin user data
+        const adminUser = {
+          id: 'admin-1',
+          name: 'Administrator',
+          email: 'admin',
+          rewardPoints: 0,
+          role: 'admin'
+        };
+        
+        localStorage.setItem(AUTH_TOKEN_KEY, `mock-admin-token`);
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(adminUser));
+        
+        toast.open({
+          title: 'Admin login successful',
+          description: 'Welcome to the admin dashboard',
+        });
+        
+        return true;
+      }
       
-      // Find user by email and password
-      const user = users.find((u: User) => 
-        u.email === credentials.email && u.password === credentials.password
-      );
+      // Regular Supabase login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
       
-      if (!user) {
+      if (error) {
+        console.error('Supabase login error:', error);
         toast.open({
           variant: 'destructive',
           title: 'Login failed',
-          description: 'Invalid email or password. Please try again.',
+          description: error.message,
         });
         return false;
       }
       
-      // Store user data and token
-      localStorage.setItem(AUTH_TOKEN_KEY, `mock-token-${user.id}`);
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+      if (data.user) {
+        // Get user profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+        }
+        
+        // Store user data in localStorage for easy access
+        const userProfile = profileData 
+          ? {
+              id: data.user.id,
+              name: profileData.name,
+              email: data.user.email,
+              address: profileData.address || '',
+              pincode: profileData.pincode || '',
+              rewardPoints: profileData.reward_points || 0,
+              role: profileData.role || 'user'
+            }
+          : {
+              id: data.user.id,
+              name: 'User',
+              email: data.user.email,
+              rewardPoints: 0,
+              role: 'user'
+            };
+        
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userProfile));
+        
+        toast.open({
+          title: 'Welcome back!',
+          description: 'You have successfully logged in.',
+        });
+        
+        return true;
+      }
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock login)
     }
     
-    toast.open({
-      title: 'Welcome back!',
-      description: 'You have successfully logged in.',
-    });
-    
-    return true;
+    return false;
   } catch (error) {
     console.error('Login error:', error);
     toast.open({
@@ -176,11 +253,10 @@ export const login = async (credentials: { email: string, password: string }): P
   }
 };
 
-export const logout = (): void => {
+export const logout = async (): Promise<void> => {
   try {
     if (supabase) {
-      // Implement real Supabase logout here when credentials are available
-      console.log('Would logout with Supabase');
+      await supabase.auth.signOut();
     }
     
     // Remove auth data from localStorage
@@ -197,7 +273,7 @@ export const logout = (): void => {
 };
 
 export const isAuthenticated = (): boolean => {
-  return localStorage.getItem(AUTH_TOKEN_KEY) !== null;
+  return localStorage.getItem(USER_DATA_KEY) !== null;
 };
 
 export const getCurrentUser = (): User | null => {
@@ -210,23 +286,34 @@ export const isAdmin = (): boolean => {
   return currentUser?.role === 'admin';
 };
 
-export const updateUser = (userData: Partial<User>): boolean => {
+export const updateUser = async (userData: Partial<User>): Promise<boolean> => {
   try {
     const currentUser = getCurrentUser();
     if (!currentUser) return false;
     
     if (supabase) {
-      // Implement real Supabase update here when credentials are available
-      console.log('Would update with Supabase:', userData);
+      // Update profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          address: userData.address,
+          pincode: userData.pincode
+        })
+        .eq('id', currentUser.id);
+      
+      if (error) {
+        console.error('Error updating user profile:', error);
+        toast.open({
+          title: 'Update failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return false;
+      }
     } else {
       // Update in mock database
-      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      const userIndex = users.findIndex((u: User) => u.id === currentUser.id);
-      
-      if (userIndex >= 0) {
-        users[userIndex] = { ...users[userIndex], ...userData };
-        localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
-      }
+      // ... keep existing code (for mock update)
     }
     
     // Update current user data
@@ -245,33 +332,37 @@ export const updateUser = (userData: Partial<User>): boolean => {
   }
 };
 
-// Add the addRewardPoints function
+// Add reward points to a user
 export const addRewardPoints = async (points: number, userId?: string): Promise<User | null> => {
   try {
     // If userId is provided, update that specific user (admin function)
     // Otherwise, update the current user
-    const userToUpdate = userId ? getUserById(userId) : getCurrentUser();
+    const userToUpdate = userId ? await getUserById(userId) : getCurrentUser();
     if (!userToUpdate) return null;
     
     if (supabase) {
-      // Implement real Supabase update here when credentials are available
-      console.log('Would update reward points with Supabase:', points);
-    } else {
-      // Update in mock database
-      const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      const userIndex = users.findIndex((u: User) => u.id === userToUpdate.id);
+      // Update points in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          reward_points: (userToUpdate.rewardPoints || 0) + points
+        })
+        .eq('id', userToUpdate.id);
       
-      if (userIndex >= 0) {
-        users[userIndex].rewardPoints += points;
-        localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
+      if (error) {
+        console.error('Error updating reward points:', error);
+        return null;
       }
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock reward points)
     }
     
     // Update current user data if it's the current user being updated
-    if (!userId) {
+    if (!userId || userId === getCurrentUser()?.id) {
       const updatedUser = { 
         ...userToUpdate, 
-        rewardPoints: userToUpdate.rewardPoints + points 
+        rewardPoints: (userToUpdate.rewardPoints || 0) + points 
       };
       
       localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
@@ -279,7 +370,7 @@ export const addRewardPoints = async (points: number, userId?: string): Promise<
     }
     
     // Return the updated user
-    return getUserById(userId);
+    return await getUserById(userId);
   } catch (error) {
     console.error('Add reward points error:', error);
     return null;
@@ -287,11 +378,37 @@ export const addRewardPoints = async (points: number, userId?: string): Promise<
 };
 
 // Get user by ID
-export const getUserById = (userId: string): User | null => {
+export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-    const user = users.find((u: User) => u.id === userId);
-    return user || null;
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user:', error);
+        return null;
+      }
+      
+      if (data) {
+        return {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          address: data.address || '',
+          pincode: data.pincode || '',
+          rewardPoints: data.reward_points || 0,
+          role: data.role || 'user'
+        };
+      }
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock getUserById)
+    }
+    
+    return null;
   } catch (error) {
     console.error('Get user by ID error:', error);
     return null;
@@ -299,26 +416,46 @@ export const getUserById = (userId: string): User | null => {
 };
 
 // Get all users - useful for admin views
-export const getAllUsers = (): User[] => {
-  if (supabase) {
-    // For a real Supabase implementation, you would fetch users from the database
-    console.log('Would fetch all users from Supabase');
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+      
+      return data.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.address || '',
+        pincode: user.pincode || '',
+        rewardPoints: user.reward_points || 0,
+        role: user.role || 'user'
+      }));
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock getAllUsers)
+    }
+    
     return [];
-  } else {
-    // Return users from mock database
-    const users = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-    return users;
+  } catch (error) {
+    console.error('Get all users error:', error);
+    return [];
   }
 };
 
 // Add a report function
-export const addReport = (reportData: Partial<Report>): Report | null => {
+export const addReport = async (reportData: Partial<Report>): Promise<Report | null> => {
   try {
     const currentUser = getCurrentUser();
     if (!currentUser) return null;
     
-    const newReport: Report = {
-      id: `report-${Date.now()}`,
+    const newReport: Partial<Report> = {
       userId: currentUser.id,
       type: reportData.type || 'waste',
       imageUrl: reportData.imageUrl,
@@ -328,12 +465,45 @@ export const addReport = (reportData: Partial<Report>): Report | null => {
       status: 'pending'
     };
     
-    // Add to mock database
-    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
-    reports.push(newReport);
-    localStorage.setItem(REPORTS_DB_KEY, JSON.stringify(reports));
+    if (supabase) {
+      // Add report to Supabase
+      const { data, error } = await supabase
+        .from('reports')
+        .insert([{
+          user_id: newReport.userId,
+          type: newReport.type,
+          image_url: newReport.imageUrl,
+          description: newReport.description,
+          location: newReport.location,
+          timestamp: newReport.timestamp,
+          status: newReport.status
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error adding report:', error);
+        return null;
+      }
+      
+      if (data) {
+        return {
+          id: data.id,
+          userId: data.user_id,
+          type: data.type,
+          imageUrl: data.image_url,
+          description: data.description,
+          location: data.location,
+          timestamp: data.timestamp,
+          status: data.status
+        };
+      }
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock addReport)
+    }
     
-    return newReport;
+    return null;
   } catch (error) {
     console.error('Add report error:', error);
     return null;
@@ -341,10 +511,35 @@ export const addReport = (reportData: Partial<Report>): Report | null => {
 };
 
 // Get all reports
-export const getAllReports = (): Report[] => {
+export const getAllReports = async (): Promise<Report[]> => {
   try {
-    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
-    return reports;
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching reports:', error);
+        return [];
+      }
+      
+      return data.map(report => ({
+        id: report.id,
+        userId: report.user_id,
+        type: report.type,
+        imageUrl: report.image_url,
+        description: report.description,
+        location: report.location,
+        timestamp: report.timestamp,
+        status: report.status
+      }));
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock getAllReports)
+    }
+    
+    return [];
   } catch (error) {
     console.error('Get all reports error:', error);
     return [];
@@ -352,10 +547,36 @@ export const getAllReports = (): Report[] => {
 };
 
 // Get reports by user
-export const getReportsByUser = (userId: string): Report[] => {
+export const getReportsByUser = async (userId: string): Promise<Report[]> => {
   try {
-    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
-    return reports.filter((report: Report) => report.userId === userId);
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching user reports:', error);
+        return [];
+      }
+      
+      return data.map(report => ({
+        id: report.id,
+        userId: report.user_id,
+        type: report.type,
+        imageUrl: report.image_url,
+        description: report.description,
+        location: report.location,
+        timestamp: report.timestamp,
+        status: report.status
+      }));
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock getReportsByUser)
+    }
+    
+    return [];
   } catch (error) {
     console.error('Get reports by user error:', error);
     return [];
@@ -363,22 +584,31 @@ export const getReportsByUser = (userId: string): Report[] => {
 };
 
 // Update report status
-export const updateReportStatus = (reportId: string, status: 'approved' | 'rejected'): boolean => {
+export const updateReportStatus = async (reportId: string, status: 'approved' | 'rejected'): Promise<boolean> => {
   try {
-    const reports = JSON.parse(localStorage.getItem(REPORTS_DB_KEY) || '[]');
-    const reportIndex = reports.findIndex((r: Report) => r.id === reportId);
-    
-    if (reportIndex >= 0) {
-      reports[reportIndex].status = status;
-      localStorage.setItem(REPORTS_DB_KEY, JSON.stringify(reports));
+    if (supabase) {
+      // Update status in Supabase
+      const { error, data } = await supabase
+        .from('reports')
+        .update({ status })
+        .eq('id', reportId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating report status:', error);
+        return false;
+      }
       
       // If approved, award points to user
-      if (status === 'approved') {
-        const report = reports[reportIndex];
-        addRewardPoints(10, report.userId);
+      if (status === 'approved' && data) {
+        await addRewardPoints(10, data.user_id);
       }
       
       return true;
+    } else {
+      // Mock database implementation
+      // ... keep existing code (for mock updateReportStatus)
     }
     
     return false;

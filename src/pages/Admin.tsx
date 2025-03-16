@@ -87,49 +87,78 @@ const Admin = () => {
     }
 
     // Fetch all users and reports
+    const fetchData = async () => {
+      try {
+        const allUsers = await getAllUsers();
+        const allReports = await getAllReports();
+        setUsers(allUsers);
+        setReports(allReports);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        open({
+          title: "Error",
+          description: "Failed to load data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate, open]);
+
+  const handleApproveReport = async (reportId: string) => {
     try {
-      const allUsers = getAllUsers();
-      const allReports = getAllReports();
-      setUsers(allUsers);
-      setReports(allReports);
+      setLoading(true);
+      const success = await updateReportStatus(reportId, 'approved');
+      if (success) {
+        open({
+          title: "Report approved",
+          description: "User has been awarded 10 points.",
+        });
+        
+        // Refresh reports and users list
+        const allReports = await getAllReports();
+        const allUsers = await getAllUsers();
+        setReports(allReports);
+        setUsers(allUsers);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error approving report:', error);
       open({
         title: "Error",
-        description: "Failed to load data",
+        description: "Failed to approve report",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [navigate, open]);
-
-  const handleApproveReport = (reportId: string) => {
-    const success = updateReportStatus(reportId, 'approved');
-    if (success) {
-      open({
-        title: "Report approved",
-        description: "User has been awarded 10 points.",
-      });
-      
-      // Refresh reports list
-      setReports(getAllReports());
-      
-      // Refresh user list to update points
-      setUsers(getAllUsers());
-    }
   };
 
-  const handleRejectReport = (reportId: string) => {
-    const success = updateReportStatus(reportId, 'rejected');
-    if (success) {
+  const handleRejectReport = async (reportId: string) => {
+    try {
+      setLoading(true);
+      const success = await updateReportStatus(reportId, 'rejected');
+      if (success) {
+        open({
+          title: "Report rejected",
+          description: "No points have been awarded.",
+        });
+        
+        // Refresh reports list
+        const allReports = await getAllReports();
+        setReports(allReports);
+      }
+    } catch (error) {
+      console.error('Error rejecting report:', error);
       open({
-        title: "Report rejected",
-        description: "No points have been awarded.",
+        title: "Error",
+        description: "Failed to reject report",
+        variant: "destructive",
       });
-      
-      // Refresh reports list
-      setReports(getAllReports());
+    } finally {
+      setLoading(false);
     }
   };
 
