@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import AuthForm from '@/components/AuthForm';
@@ -10,9 +10,16 @@ import { toast } from "@/hooks/use-toast";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async (data: any) => {
+    if (isLoading) return; // Prevent multiple submissions
+    
+    setIsLoading(true);
+    
     try {
+      console.log("Registration attempt with:", data);
+      
       const success = await register({
         name: data.name,
         email: data.email,
@@ -21,12 +28,21 @@ const Register = () => {
         address: data.address
       });
       
+      console.log("Registration success:", success);
+      
       if (success) {
         toast.open({
           title: "Registration successful",
           description: "Your account has been created. Welcome to Smart Circular!",
         });
         navigate('/');
+      } else {
+        // Handle the case where register returns false but doesn't throw an error
+        toast.open({
+          title: "Registration failed",
+          description: "Please check your information and try again",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -35,6 +51,8 @@ const Register = () => {
         description: "Please check your information and try again",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,7 +69,11 @@ const Register = () => {
             </Button>
           </Link>
           
-          <AuthForm type="register" onSubmit={handleRegister} />
+          <AuthForm 
+            type="register" 
+            onSubmit={handleRegister}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>

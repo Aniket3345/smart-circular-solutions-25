@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,16 @@ interface AuthFormProps {
   type: 'login' | 'register';
   onSubmit: (data: any) => Promise<void>;
   loginType?: 'citizen' | 'admin';
+  isLoading?: boolean;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citizen' }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ 
+  type, 
+  onSubmit, 
+  loginType = 'citizen',
+  isLoading = false
+}) => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -77,9 +83,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
       return;
     }
     
-    setIsLoading(true);
-    
     try {
+      console.log("Form submission with data:", formData);
       await onSubmit(formData);
     } catch (error) {
       console.error('Auth error:', error);
@@ -88,8 +93,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
         description: 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -125,6 +128,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
                 required
                 autoComplete="name"
                 className={`rounded-lg ${errors.name ? 'border-destructive' : ''}`}
+                disabled={isLoading}
               />
               {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
             </div>
@@ -144,6 +148,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
               required
               autoComplete={loginType === 'admin' ? 'username' : 'email'}
               className={`rounded-lg ${errors.email ? 'border-destructive' : ''}`}
+              disabled={isLoading}
             />
             {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
           </div>
@@ -160,6 +165,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
               required
               autoComplete={type === 'login' ? 'current-password' : 'new-password'}
               className={`rounded-lg ${errors.password ? 'border-destructive' : ''}`}
+              disabled={isLoading}
             />
             {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
           </div>
@@ -176,6 +182,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
                   onChange={handleChange}
                   required
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
               
@@ -189,6 +196,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loginType = 'citize
                   onChange={handleChange}
                   required
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
             </>

@@ -12,13 +12,22 @@ import { toast } from "@/hooks/use-toast";
 const Login = () => {
   const [loginType, setLoginType] = useState<'citizen' | 'admin'>('citizen');
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (data: any) => {
+    if (isLoading) return; // Prevent multiple submissions
+    
+    setIsLoading(true);
+    
     try {
+      console.log("Login attempt with:", data);
+      
       const success = await login({
         email: data.email,
         password: data.password
       });
+      
+      console.log("Login success:", success);
       
       if (success) {
         // After successful login, check if admin and redirect accordingly
@@ -44,6 +53,13 @@ const Login = () => {
           });
           navigate('/');
         }
+      } else {
+        // Handle the case where login returns false but doesn't throw an error
+        toast.open({
+          title: "Login failed",
+          description: "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -52,6 +68,8 @@ const Login = () => {
         description: "Please check your credentials and try again",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,7 +106,8 @@ const Login = () => {
           <AuthForm 
             type="login" 
             onSubmit={handleLogin} 
-            loginType={loginType} 
+            loginType={loginType}
+            isLoading={isLoading}
           />
         </div>
       </div>
