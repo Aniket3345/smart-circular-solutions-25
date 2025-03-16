@@ -58,7 +58,7 @@ const Admin = () => {
             type: report.type,
             description: report.description,
             imageUrl: report.imageUrl,
-            status: report.status,
+            status: report.status || 'pending',
             timestamp: report.timestamp,
             location: report.location,
             date: new Date(report.timestamp).toLocaleDateString()
@@ -134,6 +134,33 @@ const Admin = () => {
           variant: "destructive",
         });
       }
+      
+      // Refresh data after update
+      const refreshedReports = await getAllReports();
+      
+      // Create a unique set of reports by ID to prevent duplicates
+      const uniqueReportsMap = new Map();
+      
+      refreshedReports.forEach(report => {
+        uniqueReportsMap.set(report.id, {
+          id: report.id,
+          userId: report.userId,
+          type: report.type,
+          description: report.description,
+          imageUrl: report.imageUrl,
+          status: report.status || 'pending',
+          timestamp: report.timestamp,
+          location: report.location,
+          date: new Date(report.timestamp).toLocaleDateString()
+        });
+      });
+      
+      // Convert map back to array
+      const uniqueReports = Array.from(uniqueReportsMap.values());
+      
+      setReports(uniqueReports);
+      filterReports(currentFilter);
+      
     } catch (error) {
       console.error("Error updating report status:", error);
       toast.open({
@@ -240,6 +267,10 @@ const Admin = () => {
                           src={report.imageUrl} 
                           alt={report.type}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // If image fails to load, replace with placeholder
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
                         />
                       </div>
                     )}

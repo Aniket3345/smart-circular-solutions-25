@@ -164,7 +164,7 @@ const saveReports = (reports: Report[]): void => {
   }
 };
 
-// Check if user is authenticated
+// Authentication functions
 export const isAuthenticated = (): boolean => {
   try {
     return !!localStorage.getItem(LOCAL_STORAGE_KEY.CURRENT_USER);
@@ -174,7 +174,6 @@ export const isAuthenticated = (): boolean => {
   }
 };
 
-// Check if user is admin
 export const isAdmin = (): boolean => {
   try {
     const user = getCurrentUser();
@@ -185,7 +184,6 @@ export const isAdmin = (): boolean => {
   }
 };
 
-// Get current user
 export const getCurrentUser = (): User | null => {
   try {
     const userString = localStorage.getItem(LOCAL_STORAGE_KEY.CURRENT_USER);
@@ -199,7 +197,6 @@ export const getCurrentUser = (): User | null => {
   }
 };
 
-// Login user
 export const login = async (credentials: { email: string, password: string }): Promise<User | null> => {
   try {
     console.log("Logging in with:", credentials);
@@ -224,7 +221,6 @@ export const login = async (credentials: { email: string, password: string }): P
   }
 };
 
-// Register user
 export const register = async (userData: { 
   name: string, 
   email: string, 
@@ -273,7 +269,6 @@ export const register = async (userData: {
   }
 };
 
-// Logout user
 export const logout = (): void => {
   try {
     localStorage.removeItem(LOCAL_STORAGE_KEY.CURRENT_USER);
@@ -282,7 +277,6 @@ export const logout = (): void => {
   }
 };
 
-// Update user profile
 export const updateUser = async (userData: {
   name?: string,
   pincode?: string,
@@ -324,7 +318,6 @@ export const updateUser = async (userData: {
   }
 };
 
-// Add reward points to user
 export const addRewardPoints = async (points: number): Promise<User | null> => {
   try {
     const currentUser = getCurrentUser();
@@ -360,7 +353,6 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
   }
 };
 
-// Get all users
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     return getUsers();
@@ -370,7 +362,6 @@ export const getAllUsers = async (): Promise<User[]> => {
   }
 };
 
-// Get user by ID
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
     const users = getUsers();
@@ -382,7 +373,6 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   }
 };
 
-// Save and retrieve user reports
 export const saveUserReport = async (report: Report): Promise<boolean> => {
   try {
     // Get all reports
@@ -401,7 +391,6 @@ export const saveUserReport = async (report: Report): Promise<boolean> => {
   }
 };
 
-// Get user's reports (including waste, flood, electricity)
 export const getUserReports = async (userId: string): Promise<Report[]> => {
   try {
     // Get all reports from localStorage
@@ -421,7 +410,6 @@ export const getUserReports = async (userId: string): Promise<Report[]> => {
   }
 };
 
-// Get user-specific reports from localStorage
 const getUserSpecificReports = (storageKey: string, userId: string, type: 'waste' | 'flood' | 'electricity'): Report[] => {
   try {
     const reportsString = localStorage.getItem(storageKey);
@@ -431,13 +419,13 @@ const getUserSpecificReports = (storageKey: string, userId: string, type: 'waste
     
     // Convert the specific report format to the general Report format
     return reports.map((item: any) => ({
-      id: item.id,
+      id: item.id || `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       userId: userId,
       type: type,
       description: item.comment || '',
       imageUrl: item.image,
-      status: 'pending',
-      timestamp: new Date(item.timestamp).getTime(),
+      status: item.status || 'pending',
+      timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
       location: item.location
     }));
   } catch (error) {
@@ -446,7 +434,6 @@ const getUserSpecificReports = (storageKey: string, userId: string, type: 'waste
   }
 };
 
-// Get all reports for admin dashboard
 export const getAllReports = async (): Promise<Report[]> => {
   try {
     const officialReports = getReports();
@@ -458,13 +445,56 @@ export const getAllReports = async (): Promise<Report[]> => {
     // Get reports from all storages for all users
     let allUserReports: Report[] = [];
     
-    userIds.forEach(userId => {
-      const wasteReports = getUserSpecificReports(LOCAL_STORAGE_KEY.WASTE_REPORTS, userId, 'waste');
-      const floodReports = getUserSpecificReports(LOCAL_STORAGE_KEY.FLOOD_REPORTS, userId, 'flood');
-      const electricityReports = getUserSpecificReports(LOCAL_STORAGE_KEY.ELECTRICITY_REPORTS, userId, 'electricity');
-      
-      allUserReports = [...allUserReports, ...wasteReports, ...floodReports, ...electricityReports];
-    });
+    // Check for waste reports
+    const wasteReportsString = localStorage.getItem(LOCAL_STORAGE_KEY.WASTE_REPORTS);
+    if (wasteReportsString) {
+      const wasteItems = JSON.parse(wasteReportsString);
+      const formattedWasteReports = wasteItems.map((item: any) => ({
+        id: item.id || `waste-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        userId: item.userId || (getCurrentUser()?.id || "1"),
+        type: 'waste' as const,
+        description: item.comment || '',
+        imageUrl: item.image,
+        status: item.status || 'pending',
+        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
+        location: item.location
+      }));
+      allUserReports = [...allUserReports, ...formattedWasteReports];
+    }
+    
+    // Check for flood reports
+    const floodReportsString = localStorage.getItem(LOCAL_STORAGE_KEY.FLOOD_REPORTS);
+    if (floodReportsString) {
+      const floodItems = JSON.parse(floodReportsString);
+      const formattedFloodReports = floodItems.map((item: any) => ({
+        id: item.id || `flood-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        userId: item.userId || (getCurrentUser()?.id || "1"),
+        type: 'flood' as const,
+        description: item.comment || '',
+        imageUrl: item.image,
+        status: item.status || 'pending',
+        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
+        location: item.location
+      }));
+      allUserReports = [...allUserReports, ...formattedFloodReports];
+    }
+    
+    // Check for electricity reports
+    const electricityReportsString = localStorage.getItem(LOCAL_STORAGE_KEY.ELECTRICITY_REPORTS);
+    if (electricityReportsString) {
+      const electricityItems = JSON.parse(electricityReportsString);
+      const formattedElectricityReports = electricityItems.map((item: any) => ({
+        id: item.id || `electricity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        userId: item.userId || (getCurrentUser()?.id || "1"),
+        type: 'electricity' as const,
+        description: item.comment || '',
+        imageUrl: item.image,
+        status: item.status || 'pending',
+        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
+        location: item.location
+      }));
+      allUserReports = [...allUserReports, ...formattedElectricityReports];
+    }
     
     return [...officialReports, ...allUserReports];
   } catch (error) {
@@ -473,7 +503,6 @@ export const getAllReports = async (): Promise<Report[]> => {
   }
 };
 
-// Update report status
 export const updateReportStatus = async (
   reportId: string, 
   status: 'approved' | 'rejected'
@@ -487,55 +516,112 @@ export const updateReportStatus = async (
     // Find index of report
     const reportIndex = reports.findIndex(r => r.id === reportId);
     
-    if (reportIndex === -1) {
-      console.error(`Report with ID ${reportId} not found`);
-      return false;
-    }
-    
-    console.log(`Found report at index ${reportIndex}:`, reports[reportIndex]);
-    
-    // Update report status
-    reports[reportIndex] = {
-      ...reports[reportIndex],
-      status: status
-    };
-    
-    console.log(`Updated report:`, reports[reportIndex]);
-    
-    // If report is approved, add points to user
-    if (status === 'approved') {
-      const userId = reports[reportIndex].userId;
+    if (reportIndex !== -1) {
+      console.log(`Found report in main reports at index ${reportIndex}:`, reports[reportIndex]);
       
-      // Get all users from localStorage
-      const users = getUsers();
+      // Update report status
+      reports[reportIndex] = {
+        ...reports[reportIndex],
+        status: status
+      };
       
-      // Find index of user
-      const userIndex = users.findIndex(u => u.id === userId);
+      console.log(`Updated report:`, reports[reportIndex]);
       
-      if (userIndex !== -1) {
-        // Add 10 points to user
-        users[userIndex].rewardPoints += 10;
-        console.log(`Added 10 points to user ${userId}, new total: ${users[userIndex].rewardPoints}`);
+      // If report is approved, add points to user
+      if (status === 'approved') {
+        const userId = reports[reportIndex].userId;
         
-        // Save updated users to localStorage
-        saveUsers(users);
+        // Get all users from localStorage
+        const users = getUsers();
         
-        // If this is the current user, update their data in localStorage
-        const currentUser = getCurrentUser();
-        if (currentUser && currentUser.id === userId) {
-          localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(users[userIndex]));
+        // Find index of user
+        const userIndex = users.findIndex(u => u.id === userId);
+        
+        if (userIndex !== -1) {
+          // Add 10 points to user
+          users[userIndex].rewardPoints += 10;
+          console.log(`Added 10 points to user ${userId}, new total: ${users[userIndex].rewardPoints}`);
+          
+          // Save updated users to localStorage
+          saveUsers(users);
+          
+          // If this is the current user, update their data in localStorage
+          const currentUser = getCurrentUser();
+          if (currentUser && currentUser.id === userId) {
+            localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(users[userIndex]));
+          }
         }
       }
+      
+      // Save updated reports to localStorage
+      saveReports(reports);
+      console.log(`Successfully saved updated reports to localStorage`);
+      
+      return true;
+    } else {
+      // The report might be in one of the specific report storages
+      const reportStorageKeys = [
+        LOCAL_STORAGE_KEY.WASTE_REPORTS,
+        LOCAL_STORAGE_KEY.FLOOD_REPORTS,
+        LOCAL_STORAGE_KEY.ELECTRICITY_REPORTS
+      ];
+      
+      for (const storageKey of reportStorageKeys) {
+        const reportsString = localStorage.getItem(storageKey);
+        if (!reportsString) continue;
+        
+        const specificReports = JSON.parse(reportsString);
+        const specificReportIndex = specificReports.findIndex((r: any) => r.id === reportId);
+        
+        if (specificReportIndex !== -1) {
+          console.log(`Found report in ${storageKey} at index ${specificReportIndex}:`, specificReports[specificReportIndex]);
+          
+          // Update report status
+          specificReports[specificReportIndex].status = status;
+          
+          console.log(`Updated report:`, specificReports[specificReportIndex]);
+          
+          // If report is approved, add points to user
+          if (status === 'approved') {
+            const userId = specificReports[specificReportIndex].userId || getCurrentUser()?.id;
+            
+            if (userId) {
+              // Get all users from localStorage
+              const users = getUsers();
+              
+              // Find index of user
+              const userIndex = users.findIndex(u => u.id === userId);
+              
+              if (userIndex !== -1) {
+                // Add 10 points to user
+                users[userIndex].rewardPoints += 10;
+                console.log(`Added 10 points to user ${userId}, new total: ${users[userIndex].rewardPoints}`);
+                
+                // Save updated users to localStorage
+                saveUsers(users);
+                
+                // If this is the current user, update their data in localStorage
+                const currentUser = getCurrentUser();
+                if (currentUser && currentUser.id === userId) {
+                  localStorage.setItem(LOCAL_STORAGE_KEY.CURRENT_USER, JSON.stringify(users[userIndex]));
+                }
+              }
+            }
+          }
+          
+          // Save updated reports to localStorage
+          localStorage.setItem(storageKey, JSON.stringify(specificReports));
+          console.log(`Successfully saved updated ${storageKey} to localStorage`);
+          
+          return true;
+        }
+      }
+      
+      console.error(`Report with ID ${reportId} not found in any storage`);
+      return false;
     }
-    
-    // Save updated reports to localStorage
-    saveReports(reports);
-    console.log(`Successfully saved updated reports to localStorage`);
-    
-    return true;
   } catch (error) {
     console.error('Update report status error:', error);
     return false;
   }
 };
-
