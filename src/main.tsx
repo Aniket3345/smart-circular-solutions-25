@@ -43,7 +43,6 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Remove Supabase environment variables check
 // Render the app
 const Root = () => {
   return (
