@@ -1,5 +1,5 @@
-
 import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface User {
   id: string;
@@ -97,26 +97,15 @@ const mockReports: Report[] = [
   },
 ];
 
-// Initialize supabase client
-let supabase: any = null;
-
-try {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
-  } else {
-    console.warn('Supabase environment variables not found, falling back to mock data');
-  }
-} catch (error) {
-  console.error('Error initializing Supabase:', error);
-}
-
 // Helper function to check if Supabase is configured
 const isSupabaseConfigured = () => {
-  return !!supabase;
+  try {
+    const { supabase } = useSupabase();
+    return !!supabase;
+  } catch (error) {
+    console.error('Error checking Supabase configuration:', error);
+    return false;
+  }
 };
 
 // Check if user is authenticated
@@ -124,6 +113,7 @@ export const isAuthenticated = (): boolean => {
   try {
     // First try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       const session = supabase.auth.getSession();
       return !!session;
     }
@@ -152,11 +142,12 @@ export const getCurrentUser = (): User | null => {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       const { data } = supabase.auth.getUser();
       if (data?.user) {
         // Get user profile from profiles table
         // This would need to be implemented with proper Supabase queries
-        return data.user;
+        return data.user as unknown as User;
       }
       return null;
     }
@@ -178,6 +169,7 @@ export const login = async (credentials: { email: string, password: string }): P
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -188,7 +180,7 @@ export const login = async (credentials: { email: string, password: string }): P
       if (data?.user) {
         // Get user profile from profiles table
         // This would need to be implemented with proper Supabase queries
-        return data.user;
+        return data.user as unknown as User;
       }
     }
     
@@ -217,9 +209,17 @@ export const register = async (userData: {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
+        options: {
+          data: {
+            name: userData.name,
+            pincode: userData.pincode,
+            address: userData.address,
+          }
+        }
       });
       
       if (error) throw error;
@@ -227,7 +227,17 @@ export const register = async (userData: {
       if (data?.user) {
         // Create user profile in profiles table
         // This would need to be implemented with proper Supabase queries
-        return data.user;
+        const newUser: User = {
+          id: data.user.id,
+          email: userData.email,
+          name: userData.name,
+          rewardPoints: 0,
+          role: 'user',
+          joinDate: new Date().toISOString().split('T')[0],
+          pincode: userData.pincode,
+          address: userData.address,
+        };
+        return newUser;
       }
     }
     
@@ -256,6 +266,7 @@ export const logout = (): void => {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       supabase.auth.signOut();
     }
     
@@ -278,6 +289,7 @@ export const updateUser = async (userData: {
     
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Update user profile in Supabase
       // This would need to be implemented with proper Supabase queries
     }
@@ -306,6 +318,7 @@ export const addRewardPoints = async (points: number): Promise<User | null> => {
     
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Update user points in Supabase
       // This would need to be implemented with proper Supabase queries
     }
@@ -329,6 +342,7 @@ export const getAllUsers = async (): Promise<User[]> => {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Get all users from Supabase
       // This would need to be implemented with proper Supabase queries
     }
@@ -346,6 +360,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Get user from Supabase
       // This would need to be implemented with proper Supabase queries
     }
@@ -364,6 +379,7 @@ export const getAllReports = async (): Promise<Report[]> => {
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Get all reports from Supabase
       // This would need to be implemented with proper Supabase queries
     }
@@ -384,6 +400,7 @@ export const updateReportStatus = async (
   try {
     // Try to use Supabase if available
     if (isSupabaseConfigured()) {
+      const { supabase } = useSupabase();
       // Update report status in Supabase
       // This would need to be implemented with proper Supabase queries
     }

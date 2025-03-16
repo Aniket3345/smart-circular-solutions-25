@@ -1,9 +1,9 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
 // Declare a global variable to store the Supabase client instance
-let supabaseClient: any = null;
+let supabaseClient: SupabaseClient | null = null;
 
 export const useSupabase = () => {
   const [isInitialized, setIsInitialized] = useState(false);
