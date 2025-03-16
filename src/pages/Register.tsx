@@ -20,6 +20,17 @@ const Register = () => {
     try {
       console.log("Registration attempt with:", data);
       
+      // Validate required fields
+      if (!data.name || !data.email || !data.password) {
+        toast.open({
+          title: "Registration failed",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const success = await register({
         name: data.name,
         email: data.email,
@@ -35,6 +46,7 @@ const Register = () => {
           title: "Registration successful",
           description: "Your account has been created. Welcome to Smart Circular!",
         });
+        // Redirect to home page after successful registration
         navigate('/');
       } else {
         // Handle the case where register returns false but doesn't throw an error

@@ -76,7 +76,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
     return valid;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -85,7 +85,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
     
     try {
       console.log("Form submission with data:", formData);
-      await onSubmit(formData);
+      onSubmit(formData);
     } catch (error) {
       console.error('Auth error:', error);
       toast.open({

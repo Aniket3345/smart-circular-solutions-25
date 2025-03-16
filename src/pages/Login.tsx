@@ -44,6 +44,7 @@ const Login = () => {
               description: "You don't have admin privileges",
               variant: "destructive",
             });
+            // Still navigate to home page even if admin access is denied
             navigate('/');
           }
         } else {
