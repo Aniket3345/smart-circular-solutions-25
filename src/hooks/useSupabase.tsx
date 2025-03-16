@@ -10,7 +10,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null
 });
 
@@ -30,7 +30,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     } catch (err) {
       console.error('Error checking authentication:', err);
-      setError(err as Error);
+      setError(err instanceof Error ? err : new Error(String(err)));
       setIsLoading(false);
     }
   }, []);
